@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 
 const navItems = [
   { icon: 'home', label: 'Home', path: '/' },
@@ -10,11 +11,9 @@ const navItems = [
   { icon: 'settings', label: 'Settings', path: '/app/settings' },
 ]
 
-const bottomItems = [
-  { icon: 'logout', label: 'Sign Out', path: '/' },
-]
-
 export default function Sidebar() {
+  const { logout } = useAuth()
+
   return (
     <nav className="fixed left-0 top-0 h-screen w-[240px] z-40 bg-surface-container border-r border-white/10 flex flex-col py-6">
       {/* Logo */}
@@ -66,18 +65,15 @@ export default function Sidebar() {
 
       {/* Bottom */}
       <div className="px-2 space-y-1 border-t border-white/5 pt-4">
-        {bottomItems.map((item) => (
-          <NavLink
-            key={item.label}
-            to={item.path}
-            className="flex items-center gap-2 text-on-surface-variant px-4 py-2 hover:bg-white/5 hover:text-on-surface transition-all"
-          >
-            <span className="material-symbols-outlined text-xl">{item.icon}</span>
-            <span className="text-xs font-semibold tracking-wide uppercase" style={{ fontFamily: 'Inter' }}>
-              {item.label}
-            </span>
-          </NavLink>
-        ))}
+        <button
+          onClick={logout}
+          className="w-full flex items-center gap-2 text-on-surface-variant px-4 py-2 hover:bg-white/5 hover:text-on-surface transition-all"
+        >
+          <span className="material-symbols-outlined text-xl">logout</span>
+          <span className="text-xs font-semibold tracking-wide uppercase" style={{ fontFamily: 'Inter' }}>
+            Sign Out
+          </span>
+        </button>
       </div>
     </nav>
   )

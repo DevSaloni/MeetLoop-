@@ -58,7 +58,7 @@ const HowItWorksPage = () => {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-28 hero-gradient">
+      <section className="relative pt-32 pb-28 overflow-hidden bg-gradient-to-b from-orange-500/10 to-transparent">
         <div className="max-w-4xl mx-auto text-center px-8">
           <div className="inline-flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 rounded-full px-4 py-1.5 mb-8">
             <span className="w-2 h-2 rounded-full bg-orange-500"></span>

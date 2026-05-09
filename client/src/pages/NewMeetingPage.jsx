@@ -1,12 +1,20 @@
 import React, { useState } from 'react';
+import CustomSelect from '../components/ui/CustomSelect';
 
 const NewMeetingPage = () => {
   const [notes, setNotes] = useState("");
-
-  const extractedTasks = [
+  const [project, setProject] = useState("MeetLoop Core");
+  const [tasks, setTasks] = useState([
     { id: 1, desc: "Finalize the authentication flow for the new customer portal.", owner: "Sarah Jenkins", due: "2024-05-20", priority: "HIGH" },
     { id: 2, desc: "Send the updated Q3 projections to the investment board.", owner: "David Miller", due: "2024-05-22", priority: "MEDIUM" }
-  ];
+  ]);
+
+  const projects = ["MeetLoop Core", "Internal Architecture", "UI Refresh"];
+  const teamMembers = ["Sarah Jenkins", "David Miller", "Mark Thompson", "Alex Rivera"];
+
+  const handleTaskOwnerChange = (taskId, newOwner) => {
+    setTasks(tasks.map(t => t.id === taskId ? { ...t, owner: newOwner } : t));
+  };
 
   return (
     <div className="animate-fade-in pb-32 space-y-8">
@@ -49,11 +57,12 @@ const NewMeetingPage = () => {
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.15em]">Project</label>
-                  <select className="w-full bg-surface-container-low border border-white/10 rounded-xl p-3 text-sm text-white focus:border-primary-container focus:ring-1 focus:ring-primary-container/20 outline-none transition-all appearance-none">
-                    <option>MeetLoop Core</option>
-                    <option>Internal Architecture</option>
-                    <option>UI Refresh</option>
-                  </select>
+                  <CustomSelect 
+                    options={projects}
+                    value={project}
+                    onChange={setProject}
+                    className="h-auto"
+                  />
                 </div>
               </div>
               <div className="space-y-2 pt-2">
@@ -145,14 +154,16 @@ const NewMeetingPage = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {extractedTasks.map((task) => (
+                  {tasks.map((task) => (
                     <tr key={task.id} className="hover:bg-white/[0.02] transition-colors group">
                       <td className="px-6 py-6 text-sm text-white max-w-md font-medium">{task.desc}</td>
                       <td className="px-6 py-6">
-                        <select className="bg-surface-container-low border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:ring-1 focus:ring-primary-container outline-none appearance-none cursor-pointer">
-                          <option>{task.owner}</option>
-                          <option>Mark Thompson</option>
-                        </select>
+                        <CustomSelect 
+                          options={teamMembers}
+                          value={task.owner}
+                          onChange={(val) => handleTaskOwnerChange(task.id, val)}
+                          className="w-48 h-10"
+                        />
                       </td>
                       <td className="px-6 py-6">
                         <input type="date" className="bg-surface-container-low border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:ring-1 focus:ring-primary-container outline-none" defaultValue={task.due} />
@@ -164,7 +175,12 @@ const NewMeetingPage = () => {
                         </span>
                       </td>
                       <td className="px-6 py-6 text-right">
-                        <button className="material-symbols-outlined text-on-surface-variant hover:text-red-400 transition-colors">delete</button>
+                        <button 
+                          onClick={() => setTasks(tasks.filter(t => t.id !== task.id))}
+                          className="material-symbols-outlined text-on-surface-variant hover:text-red-400 transition-colors"
+                        >
+                          delete
+                        </button>
                       </td>
                     </tr>
                   ))}

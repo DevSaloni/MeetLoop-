@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/layout/Navbar'
 import Footer from '../components/layout/Footer'
 
@@ -38,6 +39,8 @@ const teamPerformance = [
 
 
 export default function LandingPage() {
+  const { user } = useAuth();
+
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -92,18 +95,31 @@ export default function LandingPage() {
 
               {/* BUTTONS */}
               <div className="flex flex-wrap gap-5 mt-12">
+                {user ? (
+                  <>
+                    <Link to="/app/new-meeting" className="btn-primary-premium text-white font-bold px-10 py-5 rounded-2xl text-lg flex items-center gap-3">
+                      <span className="material-symbols-outlined">add_circle</span>
+                      New Meeting
+                    </Link>
 
-                <Link to="/signup" className="bg-orange-500 hover:bg-orange-400 text-white font-bold px-10 py-5 rounded-2xl text-lg transition-all shadow-xl shadow-orange-500/20">
-                  Start Free
-                </Link>
+                    <Link to="/app" className="btn-secondary-premium text-white px-10 py-5 rounded-2xl flex items-center gap-3 text-lg">
+                      <span className="material-symbols-outlined text-orange-500">grid_view</span>
+                      Go to Dashboard
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/signup" className="btn-primary-premium text-white font-bold px-10 py-5 rounded-2xl text-lg flex items-center gap-3">
+                      <span className="material-symbols-outlined">rocket_launch</span>
+                      Start for Free
+                    </Link>
 
-                <Link to="/app" className="border border-white/10 bg-white/5 hover:bg-white/10 text-white px-10 py-5 rounded-2xl flex items-center gap-3 text-lg transition-all">
-                  <span className="material-symbols-outlined">
-                    dashboard
-                  </span>
-                  Go to Dashboard
-                </Link>
-
+                    <Link to="/how-it-works" className="btn-secondary-premium text-white px-10 py-5 rounded-2xl flex items-center gap-3 text-lg">
+                      <span className="material-symbols-outlined text-orange-500">play_circle</span>
+                      How it Works
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
 
@@ -283,10 +299,30 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto text-center flex flex-col gap-6 relative z-10">
           <h2 className="text-5xl text-on-surface" style={{ fontFamily: 'Space Grotesk', fontWeight: 700, letterSpacing: '-0.02em' }}>Stop Letting Commitments Disappear</h2>
           <p className="text-lg text-on-surface-variant">Join 500+ high-performing teams turning meeting talk into measurable progress.</p>
-          <div className="flex justify-center mt-6">
-            <Link to="/signup" className="bg-primary-container text-on-secondary font-bold px-16 py-4 rounded-lg text-2xl hover:scale-105 active:scale-95 transition-all shadow-xl" style={{ fontFamily: 'Space Grotesk' }}>
-              Get Started Today
-            </Link>
+          <div className="flex justify-center gap-5 mt-8">
+            {user ? (
+              <>
+                <Link to="/app/new-meeting" className="btn-primary-premium text-white font-bold px-12 py-5 rounded-2xl text-xl flex items-center gap-3" style={{ fontFamily: 'Space Grotesk' }}>
+                  <span className="material-symbols-outlined">add_circle</span>
+                  New Meeting
+                </Link>
+                <Link to="/app" className="btn-secondary-premium text-white px-12 py-5 rounded-2xl flex items-center gap-3 text-xl" style={{ fontFamily: 'Space Grotesk' }}>
+                  <span className="material-symbols-outlined text-orange-500">grid_view</span>
+                  Go to Dashboard
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link to="/signup" className="btn-primary-premium text-white font-bold px-12 py-5 rounded-2xl text-xl flex items-center gap-3" style={{ fontFamily: 'Space Grotesk' }}>
+                  <span className="material-symbols-outlined">rocket_launch</span>
+                  Start for Free
+                </Link>
+                <Link to="/features" className="btn-secondary-premium text-white px-12 py-5 rounded-2xl flex items-center gap-3 text-xl" style={{ fontFamily: 'Space Grotesk' }}>
+                  <span className="material-symbols-outlined text-orange-500">auto_awesome</span>
+                  See Features
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </section>

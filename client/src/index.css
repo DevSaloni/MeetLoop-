@@ -103,7 +103,42 @@ body {
 .input-inset:focus {
   border-color: var(--color-primary-container);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
+  box-shadow: 0 0 15px rgba(249, 115, 22, 0.1), 0 0 0 1px rgba(249, 115, 22, 0.2);
+}
+
+/* Select Dropdown Dark Theme */
+select {
+  color-scheme: dark;
+  accent-color: #f97316;
+}
+
+select option {
+  background-color: #111113;
+  color: #e5e1e4;
+  padding: 8px 12px;
+}
+
+select option:checked {
+  background-color: #f97316;
+  color: white;
+}
+
+/* Global focus and selection */
+*:focus {
+  outline: none !important;
+}
+
+input,
+select,
+textarea {
+  accent-color: #f97316;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #f97316 !important;
+  box-shadow: 0 0 15px rgba(249, 115, 22, 0.1), 0 0 0 1px rgba(249, 115, 22, 0.2) !important;
 }
 
 /* Step Line Gradient */
@@ -123,8 +158,18 @@ body {
 
 /* Selection */
 ::selection {
-  background-color: var(--color-primary-container);
+  background-color: #f97316;
   color: white;
+}
+
+/* Fix Autofill background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #09090B inset !important;
+  -webkit-text-fill-color: white !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 /* Smooth Scroll */
@@ -180,4 +225,48 @@ html {
 
 .delay-400 {
   animation-delay: 400ms;
+}
+/* Premium Button Styles */
+.btn-primary-premium {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px -5px rgba(249, 115, 22, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-primary-premium:hover {
+  box-shadow: 0 8px 30px -5px rgba(249, 115, 22, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.btn-primary-premium::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+  transform: rotate(45deg);
+  transition: all 0.5s;
+}
+
+.btn-primary-premium:hover::after {
+  left: 100%;
+}
+
+.btn-secondary-premium {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-secondary-premium:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
 }

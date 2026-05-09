@@ -1,6 +1,59 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
+import toast from 'react-hot-toast';
 
 const SettingsPage = () => {
+  const { user, setUser, baseUrl } = useAuth();
+  const [formData, setFormData] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    jobRole: user?.jobRole || '',
+    profilePic: user?.profilePic || ''
+  });
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        email: user.email || '',
+        jobRole: user.jobRole || '',
+        profilePic: user.profilePic || ''
+      });
+    }
+  }, [user]);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSave = async () => {
+    setLoading(true);
+    const loadId = toast.loading('Updating profile...');
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${user.token}`
+        }
+      };
+      const response = await axios.put(`${baseUrl}/auth/profile`, formData, config);
+      const updatedUser = { ...user, ...response.data };
+      setUser(updatedUser);
+      localStorage.setItem('userInfo', JSON.stringify(updatedUser));
+      toast.success('Profile updated successfully!', { id: loadId });
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to update profile', { id: loadId });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getInitial = () => {
+    if (user?.name) return user.name.charAt(0).toUpperCase();
+    return 'U';
+  };
+
   return (
     <div className="animate-fade-in space-y-10 pb-20 max-w-7xl">
       {/* Header */}
@@ -20,35 +73,75 @@ const SettingsPage = () => {
           <div className="bg-surface-container border border-white/5 rounded-2xl p-8 shadow-xl">
             <div className="flex flex-col md:flex-row gap-10 items-start md:items-center">
               <div className="relative">
-                <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-primary-container p-1 shadow-lg shadow-primary-container/10">
-                  <img
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDoq05IDgXANntF9Lgi-hpn8Vf1ibAR-Ijb-4hCp-1i2q5QlzaDrB-UMnkdqn5IHVLu-LRobU0J7hSRY5yj7lENBxmcUdXx1z46n5bYXbF4bCGHpeqprAxuWS8GB5yy3O0cg9MIp9p0MuLALS9eLHp-YmKFtXF2Z4WqzYzQ4DSJYQz5U1yDqrTe05u6im_5Ilp2yTYe7-MiyxXs_ezk9lpI106FgvbOX-KGX8Txi_Sb22objxBtzmJJV4itgDQXay91YNKZaZj7Tjs2"
-                    alt="Profile"
-                    className="w-full h-full object-cover rounded-full"
-                  />
+                <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-primary-container p-1 shadow-lg shadow-primary-container/10 bg-primary-container/20 flex items-center justify-center text-3xl font-bold text-white">
+                  {formData.profilePic ? (
+                    <img
+                      src={formData.profilePic}
+                      alt="Profile"
+                      className="w-full h-full object-cover rounded-full"
+                    />
+                  ) : (
+                    getInitial()
+                  )}
                 </div>
-                <button className="absolute bottom-0 right-0 bg-primary-container text-white p-1.5 rounded-full shadow-lg">
-                  <span className="material-symbols-outlined text-sm">edit</span>
-                </button>
+                <div className="absolute -bottom-2 -right-2 bg-primary-container text-white p-2 rounded-full shadow-lg cursor-pointer hover:scale-110 transition-transform">
+                  <span className="material-symbols-outlined text-sm">photo_camera</span>
+                </div>
               </div>
 
               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Display Name</label>
-                  <input type="text" defaultValue="Alex Rivera" className="w-full bg-surface-container-low border border-white/10 rounded-xl p-3 text-sm text-white focus:border-primary-container outline-none transition-all" />
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="w-full bg-surface-container-low border border-white/10 rounded-xl p-3 text-sm text-white focus:border-primary-container outline-none transition-all"
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Job Role</label>
-                  <input type="text" defaultValue="Senior Product Manager" className="w-full bg-surface-container-low border border-white/10 rounded-xl p-3 text-sm text-white focus:border-primary-container outline-none transition-all" />
+                  <input
+                    type="text"
+                    name="jobRole"
+                    value={formData.jobRole}
+                    onChange={handleChange}
+                    className="w-full bg-surface-container-low border border-white/10 rounded-xl p-3 text-sm text-white focus:border-primary-container outline-none transition-all"
+                    placeholder="e.g. Product Manager"
+                  />
                 </div>
                 <div className="md:col-span-2 space-y-1.5">
                   <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Email Address</label>
-                  <input type="email" defaultValue="alex@meetloop.app" className="w-full bg-surface-container-low border border-white/10 rounded-xl p-3 text-sm text-white focus:border-primary-container outline-none transition-all" />
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="w-full bg-surface-container-low border border-white/10 rounded-xl p-3 text-sm text-white focus:border-primary-container outline-none transition-all"
+                  />
+                </div>
+                <div className="md:col-span-2 space-y-1.5">
+                  <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Profile Picture URL</label>
+                  <input
+                    type="text"
+                    name="profilePic"
+                    value={formData.profilePic}
+                    onChange={handleChange}
+                    placeholder="https://example.com/photo.jpg"
+                    className="w-full bg-surface-container-low border border-white/10 rounded-xl p-3 text-sm text-white focus:border-primary-container outline-none transition-all"
+                  />
                 </div>
               </div>
             </div>
             <div className="mt-8 pt-6 border-t border-white/5 flex justify-end">
-              <button className="bg-primary-container text-white px-8 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-primary-container/10">Save Changes</button>
+              <button
+                onClick={handleSave}
+                disabled={loading}
+                className="bg-primary-container text-white px-8 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-primary-container/10 disabled:opacity-50"
+              >
+                {loading ? 'Saving...' : 'Save Changes'}
+              </button>
             </div>
           </div>
         </section>
