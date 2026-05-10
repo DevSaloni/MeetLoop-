@@ -11,12 +11,21 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const navigate = useNavigate()
-  const { user, baseUrl } = useAuth()
+  const { user, setUser, baseUrl } = useAuth()
+
+  const queryParams = new URLSearchParams(window.location.search);
+  const inviteCode = queryParams.get('invite');
 
   // Redirect if already logged in
   useEffect(() => {
-    if (user) navigate('/app');
-  }, [user, navigate]);
+    if (user) {
+      if (inviteCode) {
+        navigate(`/app/teams?invite=${inviteCode}`);
+      } else {
+        navigate('/');
+      }
+    }
+  }, [user, navigate, inviteCode]);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
@@ -44,9 +53,22 @@ export default function SignupPage() {
     const loadId = toast.loading('Creating account...')
 
     try {
-      await axios.post(`${baseUrl}/auth/register`, form);
-      toast.success('Account created! Please sign in.', { id: loadId, duration: 5000 })
-      navigate('/login')
+      const payload = { ...form };
+      if (inviteCode) payload.inviteCode = inviteCode;
+
+      const { data } = await axios.post(`${baseUrl}/auth/register`, payload);
+
+      if (inviteCode) {
+        // Auto-login the user ONLY in the invite flow
+        localStorage.setItem('userInfo', JSON.stringify(data));
+        setUser(data);
+        toast.success('Account created successfully!', { id: loadId, duration: 5000 })
+        navigate(`/app/teams?invite=${inviteCode}`)
+      } else {
+        // Normal flow: require manual login
+        toast.success('Account created! Please sign in.', { id: loadId, duration: 5000 })
+        navigate('/login')
+      }
     } catch (err) {
       const msg = err.response?.data?.message || 'Signup failed'
       const shortMsg = msg.length > 40 ? 'Account creation failed' : msg;
@@ -67,6 +89,16 @@ export default function SignupPage() {
           <h1 className="text-2xl text-on-surface mb-1 tracking-tight" style={{ fontFamily: 'Space Grotesk', fontWeight: 600 }}>Create an account</h1>
           <p className="text-sm text-on-surface-variant font-medium">Join the loop and stay accountable</p>
         </div>
+
+        {inviteCode && (
+          <div className="mb-6 p-3 bg-primary-container/10 border border-primary-container/20 rounded-lg flex items-center gap-3">
+            <span className="material-symbols-outlined text-primary-container">group_add</span>
+            <div className="text-sm">
+              <span className="text-white font-semibold block">You have a team invite!</span>
+              <span className="text-on-surface-variant text-xs">Sign up below to automatically join.</span>
+            </div>
+          </div>
+        )}
 
         <form className="space-y-4" onSubmit={handleSubmit} noValidate>
           <div className="space-y-2">
@@ -95,14 +127,16 @@ export default function SignupPage() {
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest">Your Role</label>
-            <CustomSelect 
-              options={['Contributor', 'Team Lead']} 
-              value={form.role} 
-              onChange={handleRoleChange} 
-            />
-          </div>
+          {!inviteCode && (
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest">Your Role</label>
+              <CustomSelect
+                options={['Contributor', 'Team Lead']}
+                value={form.role}
+                onChange={handleRoleChange}
+              />
+            </div>
+          )}
 
           <div className="space-y-2">
             <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-widest" htmlFor="password">Password</label>
@@ -141,7 +175,7 @@ export default function SignupPage() {
         <div className="mt-8 text-center">
           <p className="text-sm text-on-surface-variant">
             Already have an account?
-            <Link to="/login" className="text-primary-container font-semibold hover:underline underline-offset-4 ml-2">Sign in →</Link>
+            <Link to={inviteCode ? `/login?invite=${inviteCode}` : "/login"} className="text-primary-container font-semibold hover:underline underline-offset-4 ml-2">Sign in →</Link>
           </p>
         </div>
       </main>

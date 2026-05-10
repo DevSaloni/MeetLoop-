@@ -13,10 +13,19 @@ export default function LoginPage() {
   const { user, setUser, baseUrl } = useAuth()
   const navigate = useNavigate()
 
+  const queryParams = new URLSearchParams(window.location.search);
+  const inviteCode = queryParams.get('invite');
+
   // Redirect if already logged in
   useEffect(() => {
-    if (user) navigate('/');
-  }, [user, navigate]);
+    if (user) {
+      if (inviteCode) {
+        navigate(`/app/teams?invite=${inviteCode}`);
+      } else {
+        navigate('/');
+      }
+    }
+  }, [user, navigate, inviteCode]);
 
   const validateEmail = (email) => {
     return String(email)
@@ -40,7 +49,12 @@ export default function LoginPage() {
       setUser(response.data);
       localStorage.setItem('userInfo', JSON.stringify(response.data));
       toast.success('Welcome back!', { id: loadId, duration: 4000 })
-      navigate('/')
+
+      if (inviteCode) {
+        navigate(`/app/teams?invite=${inviteCode}`);
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       const msg = err.response?.data?.message || 'Login failed'
       // Keep error message short and professional
@@ -121,7 +135,7 @@ export default function LoginPage() {
         <div className="mt-10 text-center">
           <p className="text-sm text-on-surface-variant">
             Don't have an account?
-            <Link to="/signup" className="text-primary-container font-semibold hover:underline underline-offset-4 ml-2">Join now →</Link>
+            <Link to={inviteCode ? `/signup?invite=${inviteCode}` : "/signup"} className="text-primary-container font-semibold hover:underline underline-offset-4 ml-2">Join now →</Link>
           </p>
         </div>
       </main>

@@ -57,7 +57,7 @@ const NewMeetingPage = () => {
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.15em]">Project</label>
-                  <CustomSelect 
+                  <CustomSelect
                     options={projects}
                     value={project}
                     onChange={setProject}
@@ -156,9 +156,9 @@ const NewMeetingPage = () => {
                 <tbody className="divide-y divide-white/5">
                   {tasks.map((task) => (
                     <tr key={task.id} className="hover:bg-white/[0.02] transition-colors group">
-                      <td className="px-6 py-6 text-sm text-white max-w-md font-medium">{task.desc}</td>
+                      <td className="px-6 py-6 text-sm text-white max-w-[448px] font-medium">{task.desc}</td>
                       <td className="px-6 py-6">
-                        <CustomSelect 
+                        <CustomSelect
                           options={teamMembers}
                           value={task.owner}
                           onChange={(val) => handleTaskOwnerChange(task.id, val)}
@@ -175,7 +175,7 @@ const NewMeetingPage = () => {
                         </span>
                       </td>
                       <td className="px-6 py-6 text-right">
-                        <button 
+                        <button
                           onClick={() => setTasks(tasks.filter(t => t.id !== task.id))}
                           className="material-symbols-outlined text-on-surface-variant hover:text-red-400 transition-colors"
                         >

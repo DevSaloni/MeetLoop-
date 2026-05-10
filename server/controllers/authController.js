@@ -11,7 +11,7 @@ const generateToken = (id) => {
 
 // @desc    Register user
 export const register = async (req, res) => {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, inviteCode } = req.body;
 
     try {
         const userExists = await User.findOne({ email });
