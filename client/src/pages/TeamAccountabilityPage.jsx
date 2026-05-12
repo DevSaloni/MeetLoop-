@@ -270,7 +270,7 @@ export default function TeamsPage() {
               setActiveModal('create');
             }} className="btn-primary-premium flex items-center gap-2 px-6 py-3.5 rounded-xl text-base font-bold text-white transition-all">
               <span className="material-symbols-outlined text-xl">add</span>
-              Create Team
+              New Team
             </button>
           )}
         </div>
@@ -278,39 +278,34 @@ export default function TeamsPage() {
 
       {/* Empty State */}
       {teams.length === 0 && !selectedTeam ? (
-        <div className="bg-surface-container border border-white/5 rounded-3xl p-10 md:p-14 text-center shadow-2xl relative overflow-hidden">
-          {/* Decorative Background Blob */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-99 bg-primary-container/10 blur-[100px] rounded-full pointer-events-none"></div>
-
-          <div className="relative z-10">
-            <div className="w-20 h-20 bg-primary-container/10 border border-primary-container/20 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-[0_0_40px_rgba(249,115,22,0.15)]">
-              <span className="material-symbols-outlined text-primary-container text-4xl">groups</span>
-            </div>
-            <h3 className="text-4xl font-bold text-white mb-4" style={{ fontFamily: 'Space Grotesk' }}>No Teams Yet</h3>
-            <p className="text-[17px] text-on-surface-variant mb-10 max-w-[500px] mx-auto leading-relaxed">
-              {user?.role === 'Team Lead'
-                ? 'Create a collaborative workspace to start tracking tasks and decisions with your contributors.'
-                : 'Ask your Team Lead for an invite code to join their workspace and start collaborating.'}
-            </p>
-            <div className="flex items-center justify-center gap-5">
-              {user?.role === 'Contributor' && (
-                <button onClick={() => setActiveModal('join')} className="btn-primary-premium flex items-center gap-2 px-8 py-4 rounded-xl text-base font-bold text-white transition-all">
-                  <span className="material-symbols-outlined  text-xl">vpn_key</span>
-                  Enter Invite Code
-                </button>
-              )}
-              {user?.role === 'Team Lead' && (
-                <button onClick={() => {
-                  setTeamName('');
-                  setTeamDesc('');
-                  setTeamLogo('');
-                  setActiveModal('create');
-                }} className="btn-primary-premium flex items-center gap-2 px-8 py-4 rounded-xl text-base font-bold text-white transition-all">
-                  <span className="material-symbols-outlined text-xl">add_circle</span>
-                  Create Team
-                </button>
-              )}
-            </div>
+        <div className="flex flex-col items-center justify-center py-12 bg-surface-container/20 rounded-3xl border border-dashed border-white/10 group hover:border-primary-container/20 transition-all">
+          <div className="w-16 h-14 bg-white/5 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <span className="material-symbols-outlined text-4xl text-on-surface-variant/40">groups</span>
+          </div>
+          <h3 className="text-3xl font-bold text-white mb-4" style={{ fontFamily: 'Space Grotesk' }}>No Teams Yet</h3>
+          <p className="text-[15px] text-on-surface-variant text-center mb-10 max-w-[450px] mx-auto leading-relaxed">
+            {user?.role === 'Team Lead'
+              ? 'Create a collaborative workspace to start tracking tasks and decisions with your contributors.'
+              : 'Ask your Team Lead for an invite code to join their workspace and start collaborating.'}
+          </p>
+          <div className="flex items-center justify-center gap-5">
+            {user?.role === 'Contributor' && (
+              <button onClick={() => setActiveModal('join')} className="btn-primary-premium flex items-center gap-2 px-8 py-4 rounded-xl text-[10px] font-bold text-white uppercase tracking-widest transition-all">
+                <span className="material-symbols-outlined text-sm">vpn_key</span>
+                Enter Invite Code
+              </button>
+            )}
+            {user?.role === 'Team Lead' && (
+              <button onClick={() => {
+                setTeamName('');
+                setTeamDesc('');
+                setTeamLogo('');
+                setActiveModal('create');
+              }} className="btn-primary-premium flex items-center gap-2 px-8 py-4 rounded-xl text-[10px] font-bold text-white uppercase tracking-widest transition-all">
+                <span className="material-symbols-outlined text-sm">add_circle</span>
+                New Team
+              </button>
+            )}
           </div>
         </div>
       ) : (
@@ -341,7 +336,7 @@ export default function TeamsPage() {
                       )}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="text-[26px] font-bold text-white truncate" style={{ fontFamily: 'Space Grotesk' }}>{team.name}</h3>
+                          <h3 className="text-[20px] font-bold text-white truncate" style={{ fontFamily: 'Space Grotesk' }}>{team.name}</h3>
                         </div>
                         <div className="flex items-center gap-2">
                           {isCreator(team) && (
@@ -352,15 +347,15 @@ export default function TeamsPage() {
                     </div>
 
                     {team.description && (
-                      <p className="text-xs text-on-surface-variant line-clamp-2 leading-relaxed h-8">
+                      <p className="text-[13px] text-on-surface-variant leading-relaxed pb-2">
                         {team.description}
                       </p>
                     )}
 
                     <div className="flex items-center justify-between pt-2 border-t border-white/5">
                       <div className="flex -space-x-2">
-                        {team.members?.slice(0, 3).map((m, i) => (
-                          <div key={i} className="w-6 h-6 rounded-full border border-surface-container bg-surface-bright flex items-center justify-center text-[8px] font-bold text-white overflow-hidden shadow-sm">
+                        {team.members?.filter(m => m.user).slice(0, 3).map((m, i) => (
+                          <div key={i} className="w-7 h-7 rounded-full border-2 border-surface-container bg-surface-bright flex items-center justify-center text-[10px] font-bold text-white overflow-hidden shadow-sm">
                             {m.user?.profilePic ? (
                               <img src={m.user.profilePic} alt="" className="w-full h-full object-cover" />
                             ) : (
@@ -369,12 +364,12 @@ export default function TeamsPage() {
                           </div>
                         ))}
                         {team.members?.length > 3 && (
-                          <div className="w-6 h-6 rounded-full border border-surface-container bg-surface-container-highest flex items-center justify-center text-[8px] font-bold text-on-surface-variant">
+                          <div className="w-7 h-7 rounded-full border-2 border-surface-container bg-surface-container-highest flex items-center justify-center text-[10px] font-bold text-on-surface-variant">
                             +{team.members.length - 3}
                           </div>
                         )}
                       </div>
-                      <span className="text-[10px] font-medium text-on-surface-variant/60 uppercase tracking-widest">{team.members?.length || 0} Members</span>
+                      <span className="text-[11px] font-bold text-on-surface-variant/70 uppercase tracking-widest">{team.members?.length || 0} Members</span>
                     </div>
                   </div>
                 </div>
@@ -449,45 +444,51 @@ export default function TeamsPage() {
                     </h3>
                   </div>
                   <div className="space-y-3">
-                    {selectedTeam.members?.map((m) => (
-                      <div key={m.user?._id || m._id} className="flex items-center justify-between bg-surface-container-low border border-white/5 rounded-2xl px-5 py-4 hover:border-white/10 transition-all hover:bg-white/[0.02]">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-full bg-surface-bright border-2 border-surface flex items-center justify-center text-sm font-bold text-white overflow-hidden shadow-md">
-                            {m.user?.profilePic ? (
-                              <img src={m.user.profilePic} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              m.user?.name?.charAt(0)?.toUpperCase() || '?'
-                            )}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2 mb-0.5">
-                              <span className="text-base font-bold text-white">{m.user?.name}</span>
-                              {m.user?._id === selectedTeam.creator?._id && (
-                                <span className="text-[10px] font-bold text-primary-container bg-primary-container/10 px-2 py-0.5 rounded uppercase tracking-widest">Creator</span>
+                    {selectedTeam.members?.map((m) => {
+                      const memberUser = m.user || {};
+                      const memberId = memberUser._id || m._id;
+                      const isCreatorMember = memberId === selectedTeam.creator?._id || memberId === selectedTeam.creator;
+
+                      return (
+                        <div key={memberId} className="flex items-center justify-between bg-surface-container-low border border-white/5 rounded-2xl px-5 py-4 hover:border-white/10 transition-all hover:bg-white/[0.02]">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-surface-bright border-2 border-surface flex items-center justify-center text-sm font-bold text-white overflow-hidden shadow-md">
+                              {memberUser.profilePic ? (
+                                <img src={memberUser.profilePic} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                memberUser.name?.charAt(0)?.toUpperCase() || '?'
                               )}
                             </div>
-                            <span className="text-xs text-on-surface-variant">{m.user?.email}</span>
+                            <div>
+                              <div className="flex items-center gap-2 mb-0.5">
+                                <span className="text-base font-bold text-white">{memberUser.name || 'Unknown Member'}</span>
+                                {isCreatorMember && (
+                                  <span className="text-[10px] font-black text-primary-container bg-primary-container/10 px-2 py-0.5 rounded uppercase tracking-widest border border-primary-container/20">Team Lead</span>
+                                )}
+                              </div>
+                              <span className="text-xs text-on-surface-variant">{memberUser.email || 'No email provided'}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <span className={`text-[11px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border ${m.role === 'Team Lead' || isCreatorMember
+                              ? 'text-primary-container bg-primary-container/10 border-primary-container/20'
+                              : 'text-on-surface-variant bg-white/5 border-white/10'
+                              }`}>
+                              {isCreatorMember ? 'Team Lead' : m.role}
+                            </span>
+                            {isCreator(selectedTeam) && !isCreatorMember && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleRemoveMember(selectedTeam._id, memberId, memberUser.name); }}
+                                className="w-9 h-9 flex items-center justify-center rounded-lg bg-red-500/5 text-red-400/70 hover:text-red-400 hover:bg-red-500/20 border border-transparent hover:border-red-500/20 transition-all"
+                                title="Remove member"
+                              >
+                                <span className="material-symbols-outlined text-lg">person_remove</span>
+                              </button>
+                            )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <span className={`text-[11px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border ${m.role === 'Team Lead'
-                            ? 'text-primary-container bg-primary-container/10 border-primary-container/20'
-                            : 'text-on-surface-variant bg-white/5 border-white/10'
-                            }`}>
-                            {m.role}
-                          </span>
-                          {isCreator(selectedTeam) && m.user?._id !== selectedTeam.creator?._id && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleRemoveMember(selectedTeam._id, m.user._id, m.user.name); }}
-                              className="w-9 h-9 flex items-center justify-center rounded-lg bg-red-500/5 text-red-400/70 hover:text-red-400 hover:bg-red-500/20 border border-transparent hover:border-red-500/20 transition-all"
-                              title="Remove member"
-                            >
-                              <span className="material-symbols-outlined text-lg">person_remove</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -516,7 +517,7 @@ export default function TeamsPage() {
 
       {/* Invite Members Modal (Premium UI) */}
       {activeModal === 'invite' && selectedTeam && (
-        <div className="fixed inset-0 z-[9999] flex justify-center items-start overflow-y-auto bg-black/70 backdrop-blur-xl p-4 pt-20 pb-10 scrollbar-hide" onClick={() => setActiveModal(null)}>
+        <div className="fixed inset-0 z-[9999] flex justify-center items-start overflow-y-auto bg-black/70 backdrop-blur-sm p-4 pt-20 pb-10 scrollbar-hide" onClick={() => setActiveModal(null)}>
           <div className="relative w-full max-w-[500px] bg-surface-container border border-white/10 rounded-3xl shadow-2xl animate-fade-in" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="p-8 border-b border-white/5 relative">
@@ -626,7 +627,7 @@ export default function TeamsPage() {
 
       {/* Create Team Modal */}
       {activeModal === 'create' && (
-        <div className="fixed inset-0 z-[9999] flex justify-center items-start overflow-y-auto bg-black/70 backdrop-blur-xl p-4 pt-20 pb-10 scrollbar-hide" onClick={() => setActiveModal(null)}>
+        <div className="fixed inset-0 z-[9999] flex justify-center items-start overflow-y-auto bg-black/70 backdrop-blur-sm p-4 pt-20 pb-10 scrollbar-hide" onClick={() => setActiveModal(null)}>
           <div className="relative w-full max-w-[500px] bg-surface-container border border-white/10 rounded-3xl shadow-2xl animate-fade-in" onClick={e => e.stopPropagation()}>
             <div className="p-8 border-b border-white/5 bg-gradient-to-b from-primary-container/5 to-transparent relative">
               <button
@@ -715,7 +716,7 @@ export default function TeamsPage() {
 
       {/* Edit Team Modal */}
       {activeModal === 'edit' && (
-        <div className="fixed inset-0 z-[9999] flex justify-center items-start overflow-y-auto bg-black/70 backdrop-blur-xl p-4 pt-20 pb-10 scrollbar-hide" onClick={() => setActiveModal(null)}>
+        <div className="fixed inset-0 z-[9999] flex justify-center items-start overflow-y-auto bg-black/70 backdrop-blur-sm p-4 pt-20 pb-10 scrollbar-hide" onClick={() => setActiveModal(null)}>
           <div className="relative w-full max-w-[500px] bg-surface-container border border-white/10 rounded-3xl shadow-2xl animate-fade-in" onClick={e => e.stopPropagation()}>
             <div className="p-8 border-b border-white/5 bg-gradient-to-b from-primary-container/5 to-transparent relative">
               <button
@@ -804,7 +805,7 @@ export default function TeamsPage() {
 
       {/* Join Team Modal */}
       {activeModal === 'join' && (
-        <div className="fixed inset-0 z-[9999] flex justify-center items-start overflow-y-auto bg-black/70 backdrop-blur-xl p-4 pt-20 pb-10 scrollbar-hide" onClick={() => setActiveModal(null)}>
+        <div className="fixed inset-0 z-[9999] flex justify-center items-start overflow-y-auto bg-black/70 backdrop-blur-sm p-4 pt-20 pb-10 scrollbar-hide" onClick={() => setActiveModal(null)}>
           <div className="relative w-full max-w-[500px] bg-surface-container border border-white/10 rounded-3xl shadow-2xl animate-fade-in" onClick={e => e.stopPropagation()}>
             <div className="p-8 border-b border-white/5 bg-gradient-to-b from-orange-500/5 to-transparent relative">
               <button

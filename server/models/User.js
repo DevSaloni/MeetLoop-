@@ -40,6 +40,11 @@ const userSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now
+    },
+    preferences: {
+        emailNotifications: { type: Boolean, default: true },
+        slackSync: { type: Boolean, default: true },
+        aiSummaries: { type: Boolean, default: false }
     }
 });
 

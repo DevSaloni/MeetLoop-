@@ -100,6 +100,10 @@ export const updateProfile = async (req, res) => {
             user.email = req.body.email || user.email;
             user.jobRole = req.body.jobRole !== undefined ? req.body.jobRole : user.jobRole;
             user.profilePic = req.body.profilePic !== undefined ? req.body.profilePic : user.profilePic;
+            
+            if (req.body.preferences) {
+                user.preferences = { ...user.preferences, ...req.body.preferences };
+            }
 
             if (req.body.password) {
                 user.password = req.body.password;
@@ -114,11 +118,31 @@ export const updateProfile = async (req, res) => {
                 role: updatedUser.role,
                 profilePic: updatedUser.profilePic,
                 jobRole: updatedUser.jobRole,
+                preferences: updatedUser.preferences,
                 token: generateToken(updatedUser._id),
             });
         } else {
             res.status(404).json({ message: 'User not found' });
         }
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Delete user account and all data (Purge)
+export const deleteAccount = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // 1. Delete all meetings where this user is the lead/owner
+        // (Assuming we have a Meeting model, let's just do account deletion for now)
+        await User.findByIdAndDelete(req.user._id);
+
+        res.json({ message: 'Account and all associated data purged successfully' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

@@ -12,7 +12,7 @@ const navItems = [
 ]
 
 export default function Sidebar() {
-  const { logout } = useAuth()
+  const { user, logout } = useAuth();
 
   return (
     <nav className="fixed left-0 top-0 h-screen w-[240px] z-40 bg-surface-container border-r border-white/10 flex flex-col py-6">
@@ -29,7 +29,8 @@ export default function Sidebar() {
         </p>
       </div>
 
-      {/* New Meeting Button */}
+      {/* New Meeting Button — Team Lead Only */}
+      {user?.role === 'Team Lead' && (
       <div className="px-4 mb-6">
         <NavLink
           to="/app/new-meeting"
@@ -40,6 +41,7 @@ export default function Sidebar() {
           New Meeting
         </NavLink>
       </div>
+      )}
 
       {/* Navigation */}
       <div className="flex-1 space-y-1">

@@ -1,20 +1,182 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
+import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 import CustomSelect from '../components/ui/CustomSelect';
+import CustomDatePicker from '../components/ui/CustomDatePicker';
+
+const MEETING_TYPES = [
+  "Sprint Planning",
+  "Daily Standup",
+  "Backlog Refinement",
+  "Sprint Review",
+  "Sprint Retrospective",
+  "Strategy & Planning",
+  "Technical Architecture",
+  "Client Meeting",
+  "1-on-1 Sync",
+  "Other"
+];
 
 const NewMeetingPage = () => {
-  const [notes, setNotes] = useState("");
-  const [project, setProject] = useState("MeetLoop Core");
-  const [tasks, setTasks] = useState([
-    { id: 1, desc: "Finalize the authentication flow for the new customer portal.", owner: "Sarah Jenkins", due: "2024-05-20", priority: "HIGH" },
-    { id: 2, desc: "Send the updated Q3 projections to the investment board.", owner: "David Miller", due: "2024-05-22", priority: "MEDIUM" }
-  ]);
+  const { user, baseUrl } = useAuth();
+  const navigate = useNavigate();
 
-  const projects = ["MeetLoop Core", "Internal Architecture", "UI Refresh"];
-  const teamMembers = ["Sarah Jenkins", "David Miller", "Mark Thompson", "Alex Rivera"];
+  // Form state
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [meetingType, setMeetingType] = useState('Daily Standup');
+  const [notes, setNotes] = useState('');
+  const [selectedTeamId, setSelectedTeamId] = useState('');
 
-  const handleTaskOwnerChange = (taskId, newOwner) => {
-    setTasks(tasks.map(t => t.id === taskId ? { ...t, owner: newOwner } : t));
+  // Data state
+  const [teams, setTeams] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [isLoadingTeams, setIsLoadingTeams] = useState(true);
+
+  // AI extraction state
+  const [extractedTasks, setExtractedTasks] = useState([]);
+  const [extractedDecisions, setExtractedDecisions] = useState([]);
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [isExtracted, setIsExtracted] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [currentMeetingId, setCurrentMeetingId] = useState(null);
+
+  const config = { headers: { Authorization: `Bearer ${user?.token}` } };
+
+  // Fetch user's teams on mount
+  useEffect(() => {
+    const fetchTeams = async () => {
+      setIsLoadingTeams(true);
+      try {
+        const { data } = await axios.get(`${baseUrl}/teams`, config);
+        setTeams(data.data);
+        if (data.data && data.data.length > 0) {
+          setSelectedTeamId(data.data[0]._id);
+        }
+      } catch (err) {
+        toast.error('Failed to load teams');
+      } finally {
+        setIsLoadingTeams(false);
+      }
+    };
+    if (user) fetchTeams();
+  }, [user]);
+
+  // Update team members when team selection changes
+  useEffect(() => {
+    if (selectedTeamId) {
+      const team = teams.find(t => t._id === selectedTeamId);
+      if (team?.members) {
+        setTeamMembers(team.members.map(m => ({
+          _id: m.user?._id || m.user,
+          name: m.user?.name || 'Unknown',
+          profilePic: m.user?.profilePic || ''
+        })));
+      }
+    }
+  }, [selectedTeamId, teams]);
+
+  // Handle creating meeting + AI extraction
+  const handleExtract = async () => {
+    if (!title.trim()) return toast.error('Please enter a meeting title');
+    if (!selectedTeamId) return toast.error('Please select a team');
+    if (!notes.trim() || notes.trim().split(/\s+/).length < 5) {
+      return toast.error('Please enter meeting notes (at least a few sentences)');
+    }
+
+    setIsExtracting(true);
+    const loadId = toast.loading('🤖 AI is analyzing your meeting notes...');
+
+    try {
+      let data;
+      if (currentMeetingId) {
+        // Update existing meeting first
+        await axios.put(`${baseUrl}/meetings/${currentMeetingId}`, {
+          title: title.trim(),
+          description: description.trim(),
+          date,
+          meetingType,
+          notes: notes.trim()
+        }, config);
+
+        // Then re-extract
+        const res = await axios.post(`${baseUrl}/meetings/${currentMeetingId}/extract`, {}, config);
+        data = res.data;
+      } else {
+        // Create new meeting
+        const res = await axios.post(`${baseUrl}/meetings`, {
+          title: title.trim(),
+          description: description.trim(),
+          teamId: selectedTeamId,
+          date,
+          meetingType,
+          notes: notes.trim()
+        }, config);
+        data = res.data;
+      }
+
+      setExtractedTasks(data.tasks || []);
+      setExtractedDecisions(data.decisions || []);
+      setCurrentMeetingId(data._id);
+      setIsExtracted(true);
+
+      const taskCount = data.tasks?.length || 0;
+      const decisionCount = data.decisions?.length || 0;
+      toast.success(`Found ${taskCount} tasks and ${decisionCount} decisions!`, { id: loadId });
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Extraction failed', { id: loadId });
+    } finally {
+      setIsExtracting(false);
+    }
   };
+
+  // Handle saving final meeting (after review)
+  const handleSave = async () => {
+    if (!currentMeetingId) return;
+    setIsSaving(true);
+    const loadId = toast.loading('Saving changes...');
+    try {
+      await axios.put(`${baseUrl}/meetings/${currentMeetingId}`, {
+        tasks: extractedTasks.map(t => ({
+          ...t,
+          assignedTo: t.assignedTo?._id || t.assignedTo || null
+        })),
+        decisions: extractedDecisions
+      }, config);
+      toast.success('Meeting saved successfully!', { id: loadId });
+      setTimeout(() => { navigate('/app/meetings'); }, 1000);
+    } catch (err) {
+      toast.error('Failed to save changes', { id: loadId });
+      setIsSaving(false);
+    }
+  };
+
+  // Handle task field changes
+  const updateTask = (index, field, value) => {
+    const updated = [...extractedTasks];
+    updated[index] = { ...updated[index], [field]: value };
+    setExtractedTasks(updated);
+  };
+
+  const removeTask = (index) => {
+    setExtractedTasks(extractedTasks.filter((_, i) => i !== index));
+  };
+
+  // Redirect if not Team Lead
+  if (user?.role !== 'Team Lead') {
+    return (
+      <div className="animate-fade-in flex items-center justify-center min-h-[60vh]">
+        <div className="text-center space-y-4">
+          <span className="material-symbols-outlined text-6xl text-on-surface-variant/30">block</span>
+          <h2 className="text-2xl font-bold text-white" style={{ fontFamily: 'Space Grotesk' }}>Access Restricted</h2>
+          <p className="text-on-surface-variant">Only Team Leads can create meetings.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-in pb-32 space-y-8">
@@ -30,56 +192,101 @@ const NewMeetingPage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Meeting Details Card */}
-        <div className="lg:col-span-4 space-y-6">
-          <section className="bg-surface-container border border-white/5 rounded-2xl p-6 shadow-2xl">
+        <div className="lg:col-span-5 space-y-6">
+          <section className="bg-surface-container border border-white/5 rounded-2xl p-8 shadow-2xl">
             <div className="flex items-center gap-3 mb-6">
               <span className="material-symbols-outlined text-primary-container">info</span>
               <h3 className="text-xl font-bold text-white" style={{ fontFamily: 'Space Grotesk' }}>Meeting Info</h3>
             </div>
             <div className="space-y-4">
+              {/* Meeting Title */}
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.15em]">Meeting Title</label>
                 <input
                   type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
                   className="w-full bg-surface-container-low border border-white/10 rounded-xl p-3 text-sm text-white focus:border-primary-container focus:ring-1 focus:ring-primary-container/20 outline-none transition-all placeholder:text-on-surface-variant/20"
-                  placeholder="e.g. Q3 Roadmap Planning"
+                  placeholder="e.g. Sprint Planning — Week 12"
+                  disabled={isExtracted}
                 />
               </div>
+
+              {/* Meeting Description */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.15em]">Description</label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="w-full bg-surface-container-low border border-white/10 rounded-xl p-3 text-sm text-white focus:border-primary-container focus:ring-1 focus:ring-primary-container/20 outline-none transition-all placeholder:text-on-surface-variant/20 resize-none h-20"
+                  placeholder="Short objective or context..."
+                  disabled={isExtracted}
+                />
+              </div>
+
+              {/* Date + Team */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.15em]">Date</label>
-                  <input
-                    type="date"
-                    className="w-full bg-surface-container-low border border-white/10 rounded-xl p-3 text-sm text-white focus:border-primary-container focus:ring-1 focus:ring-primary-container/20 outline-none transition-all"
+                <div className="space-y-2">
+                  <label className="text-[5px] font-bold text-on-surface-variant uppercase tracking-[0.15em]">Date</label>
+                  <CustomDatePicker
+                    value={date}
+                    onChange={setDate}
+                    className="h-auto"
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.15em]">Project</label>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.15em]">Team</label>
                   <CustomSelect
-                    options={projects}
-                    value={project}
-                    onChange={setProject}
+                    options={teams.map(t => t.name)}
+                    value={teams.find(t => t._id === selectedTeamId)?.name || ''}
+                    onChange={(name) => {
+                      const team = teams.find(t => t.name === name);
+                      if (team) setSelectedTeamId(team._id);
+                    }}
+                    placeholder={isLoadingTeams ? "Loading teams..." : teams.length === 0 ? "No teams found" : "Select Team"}
                     className="h-auto"
                   />
                 </div>
               </div>
+
+              {/* Meeting Type */}
               <div className="space-y-2 pt-2">
                 <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.15em]">Meeting Type</label>
-                <div className="flex flex-wrap gap-2">
-                  {['Strategy', 'Daily', 'Review', 'Incident'].map((type) => (
-                    <span key={type} className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest cursor-pointer transition-all border ${type === 'Strategy' ? 'bg-primary-container text-white border-primary-container shadow-lg shadow-primary-container/20' : 'bg-white/5 border-white/10 text-on-surface-variant hover:border-white/30'
-                      }`}>
-                      {type}
-                    </span>
-                  ))}
-                </div>
+                <CustomSelect
+                  options={MEETING_TYPES}
+                  value={meetingType}
+                  onChange={setMeetingType}
+                  placeholder="Select Type"
+                  className="h-auto"
+                />
               </div>
+
+              {/* Team Members Preview */}
+              {teamMembers.length > 0 && (
+                <div className="pt-4 border-t border-white/5">
+                  <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.15em] mb-2 block">Team Members ({teamMembers.length})</label>
+                  <div className="flex flex-wrap gap-2">
+                    {teamMembers.map((m) => (
+                      <div key={m._id} className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5">
+                        <div className="w-5 h-5 rounded-full bg-surface-bright border border-white/10 flex items-center justify-center text-[8px] font-bold text-white overflow-hidden">
+                          {m.profilePic ? (
+                            <img src={m.profilePic} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            m.name?.charAt(0)?.toUpperCase()
+                          )}
+                        </div>
+                        <span className="text-[10px] font-medium text-on-surface-variant">{m.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </section>
 
-          {/* AI Instructions Tip */}
+          {/* Pro Tip */}
           <div className="bg-primary-container/5 border border-primary-container/10 rounded-2xl p-6">
             <div className="flex items-center gap-2 mb-3 text-primary-container">
               <span className="material-symbols-outlined text-sm">lightbulb</span>
@@ -92,17 +299,13 @@ const NewMeetingPage = () => {
         </div>
 
         {/* Editor Card */}
-        <div className="lg:col-span-8">
+        <div className="lg:col-span-7">
           <section className="bg-surface-container border border-white/5 rounded-2xl p-6 shadow-2xl flex flex-col h-full min-h-[500px]">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <span className="material-symbols-outlined text-primary-container">notes</span>
                 <h3 className="text-xl font-bold text-white" style={{ fontFamily: 'Space Grotesk' }}>Notes & Transcript</h3>
               </div>
-              <button className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-xl text-[10px] font-bold text-white uppercase tracking-widest hover:bg-white/10 transition-all">
-                <span className="material-symbols-outlined text-lg">upload_file</span>
-                Upload
-              </button>
             </div>
             <div className="flex-1">
               <textarea
@@ -110,115 +313,138 @@ const NewMeetingPage = () => {
                 onChange={(e) => setNotes(e.target.value)}
                 className="w-full h-full min-h-[400px] bg-surface-container-low border border-white/10 rounded-2xl p-6 text-sm text-white focus:border-primary-container focus:ring-1 focus:ring-primary-container/20 outline-none transition-all resize-none leading-relaxed placeholder:text-on-surface-variant/20 scrollbar-hide"
                 placeholder="Paste your raw meeting notes or Zoom transcript here..."
+                disabled={isExtracted}
               />
             </div>
             <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-4">
-              <div className="flex items-center gap-4">
-                <span className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest">Supports: .TXT, .VTT, .DOCX</span>
-              </div>
+              <span className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest">Supports: .TXT, .VTT, .DOCX</span>
               <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Words: {notes.split(/\s+/).filter(x => x).length}</span>
             </div>
           </section>
         </div>
       </div>
 
-      {/* AI Extraction Results */}
-      <div className="space-y-8 animate-slide-up">
-        <section className="bg-surface-container border border-white/5 rounded-2xl p-8 shadow-2xl overflow-hidden relative group">
-          <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
-            <span className="material-symbols-outlined text-[120px] text-primary-container">verified</span>
-          </div>
+      {/* AI Extraction Results — Only shown after extraction */}
+      {isExtracted && (
+        <div className="space-y-8 animate-slide-up">
+          {/* Tasks Section */}
+          <section className="bg-surface-container border border-white/5 rounded-2xl p-8 shadow-2xl overflow-hidden relative group">
+            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+              <span className="material-symbols-outlined text-[120px] text-primary-container">verified</span>
+            </div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-primary-container/10 rounded-xl flex items-center justify-center text-primary-container">
+                    <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white" style={{ fontFamily: 'Space Grotesk' }}>AI Found These Commitments</h3>
+                    <p className="text-xs text-on-surface-variant">Review and adjust before saving to the workspace.</p>
+                  </div>
+                </div>
+                <span className="text-sm font-bold text-primary-container bg-primary-container/10 px-4 py-2 rounded-xl border border-primary-container/20">
+                  {extractedTasks.length} Tasks
+                </span>
+              </div>
 
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-4">
+              {extractedTasks.length === 0 ? (
+                <div className="text-center py-12 text-on-surface-variant">
+                  <span className="material-symbols-outlined text-4xl mb-2 block opacity-30">search_off</span>
+                  <p className="text-sm">No tasks were found in the meeting notes.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead className="border-b border-white/5">
+                      <tr>
+                        <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Task Description</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Assigned To</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Due Date</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Priority</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {extractedTasks.map((task, index) => (
+                        <tr key={task._id || index} className="hover:bg-white/[0.02] transition-colors group">
+                          <td className="px-6 py-5 text-sm text-white max-w-[400px] font-medium">{task.description}</td>
+                          <td className="px-6 py-5">
+                            <select
+                              value={task.assignedTo?._id || task.assignedTo || ''}
+                              onChange={(e) => updateTask(index, 'assignedTo', e.target.value || null)}
+                              className="bg-surface-container-low border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:border-primary-container outline-none w-40 appearance-none cursor-pointer"
+                            >
+                              <option value="" className="bg-surface-container">Unassigned</option>
+                              {teamMembers.map(m => (
+                                <option key={m._id} value={m._id} className="bg-surface-container">{m.name}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="px-6 py-5">
+                            <input
+                              type="date"
+                              className="bg-surface-container-low border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:ring-1 focus:ring-primary-container outline-none"
+                              value={task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : ''}
+                              onChange={(e) => updateTask(index, 'dueDate', e.target.value)}
+                            />
+                          </td>
+                          <td className="px-6 py-5">
+                            <select
+                              value={task.priority || 'MEDIUM'}
+                              onChange={(e) => updateTask(index, 'priority', e.target.value)}
+                              className="bg-transparent border-none text-xs font-bold outline-none cursor-pointer appearance-none"
+                              style={{ color: task.priority === 'HIGH' ? '#f87171' : task.priority === 'LOW' ? '#60a5fa' : '#f97316' }}
+                            >
+                              <option value="HIGH" className="bg-surface-container text-red-400">HIGH</option>
+                              <option value="MEDIUM" className="bg-surface-container text-primary-container">MEDIUM</option>
+                              <option value="LOW" className="bg-surface-container text-blue-400">LOW</option>
+                            </select>
+                          </td>
+                          <td className="px-6 py-5 text-right">
+                            <button
+                              onClick={() => removeTask(index)}
+                              className="material-symbols-outlined text-on-surface-variant hover:text-red-400 transition-colors"
+                            >
+                              delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Decision Log */}
+          {extractedDecisions.length > 0 && (
+            <section className="bg-surface-container border border-white/5 rounded-2xl p-8 shadow-2xl">
+              <div className="flex items-center gap-4 mb-8">
                 <div className="w-12 h-12 bg-primary-container/10 rounded-xl flex items-center justify-center text-primary-container">
-                  <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+                  <span className="material-symbols-outlined text-3xl">history_edu</span>
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-white" style={{ fontFamily: 'Space Grotesk' }}>AI Found These Commitments</h3>
-                  <p className="text-xs text-on-surface-variant">Review and adjust before saving to the workspace.</p>
+                  <h3 className="text-2xl font-bold text-white" style={{ fontFamily: 'Space Grotesk' }}>Decision Log</h3>
+                  <p className="text-xs text-on-surface-variant">Permanent record of key strategic choices.</p>
                 </div>
               </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead className="border-b border-white/5">
-                  <tr>
-                    <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Task Description</th>
-                    <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Assigned To</th>
-                    <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Due Date</th>
-                    <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Priority</th>
-                    <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {tasks.map((task) => (
-                    <tr key={task.id} className="hover:bg-white/[0.02] transition-colors group">
-                      <td className="px-6 py-6 text-sm text-white max-w-[448px] font-medium">{task.desc}</td>
-                      <td className="px-6 py-6">
-                        <CustomSelect
-                          options={teamMembers}
-                          value={task.owner}
-                          onChange={(val) => handleTaskOwnerChange(task.id, val)}
-                          className="w-48 h-10"
-                        />
-                      </td>
-                      <td className="px-6 py-6">
-                        <input type="date" className="bg-surface-container-low border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:ring-1 focus:ring-primary-container outline-none" defaultValue={task.due} />
-                      </td>
-                      <td className="px-6 py-6">
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold border ${task.priority === 'HIGH' ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-primary-container/10 border-primary-container/20 text-primary-container'
-                          }`}>
-                          {task.priority}
-                        </span>
-                      </td>
-                      <td className="px-6 py-6 text-right">
-                        <button
-                          onClick={() => setTasks(tasks.filter(t => t.id !== task.id))}
-                          className="material-symbols-outlined text-on-surface-variant hover:text-red-400 transition-colors"
-                        >
-                          delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        {/* Decision Log Card */}
-        <section className="bg-surface-container border border-white/5 rounded-2xl p-8 shadow-2xl">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 bg-primary-container/10 rounded-xl flex items-center justify-center text-primary-container">
-              <span className="material-symbols-outlined text-3xl">history_edu</span>
-            </div>
-            <div>
-              <h3 className="text-2xl font-bold text-white" style={{ fontFamily: 'Space Grotesk' }}>Decision Log</h3>
-              <p className="text-xs text-on-surface-variant">Permanent record of key strategic choices.</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-6 bg-surface-container-low border border-white/5 rounded-2xl space-y-2 group hover:border-primary-container/30 transition-all">
-              <div className="flex items-center gap-2 text-primary-container">
-                <span className="material-symbols-outlined text-sm">check_circle</span>
-                <p className="text-sm font-bold uppercase tracking-widest">Architectural Switch</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {extractedDecisions.map((d, i) => (
+                  <div key={i} className="p-6 bg-surface-container-low border border-white/5 rounded-2xl space-y-2 group hover:border-primary-container/30 transition-all">
+                    <div className="flex items-center gap-2 text-primary-container">
+                      <span className="material-symbols-outlined text-sm">check_circle</span>
+                      <p className="text-sm font-bold uppercase tracking-widest">{d.title}</p>
+                    </div>
+                    <p className="text-xs text-on-surface-variant leading-relaxed">{d.description}</p>
+                  </div>
+                ))}
               </div>
-              <p className="text-xs text-on-surface-variant leading-relaxed">Team agreed to migrate the database to PostgreSQL by the end of Q4 to support better scaling.</p>
-            </div>
-            <div className="p-6 bg-surface-container-low border border-white/5 rounded-2xl space-y-2 group hover:border-primary-container/30 transition-all">
-              <div className="flex items-center gap-2 text-primary-container">
-                <span className="material-symbols-outlined text-sm">check_circle</span>
-                <p className="text-sm font-bold uppercase tracking-widest">Pricing Strategy</p>
-              </div>
-              <p className="text-xs text-on-surface-variant leading-relaxed">Confirmed that the legacy 'Starter' plan will be grandfathered in for existing users indefinitely.</p>
-            </div>
-          </div>
-        </section>
-      </div>
+            </section>
+          )}
+        </div>
+      )}
 
       {/* Sticky Action Bar */}
       <div className="fixed bottom-0 right-0 left-[240px] z-50">
@@ -226,19 +452,61 @@ const NewMeetingPage = () => {
           <div className="flex items-center gap-12 ml-6">
             <div className="flex flex-col">
               <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Tasks Found</span>
-              <span className="text-3xl font-bold text-white leading-none" style={{ fontFamily: 'Space Grotesk' }}>05</span>
+              <span className="text-3xl font-bold text-white leading-none" style={{ fontFamily: 'Space Grotesk' }}>
+                {isExtracted ? String(extractedTasks.length).padStart(2, '0') : '--'}
+              </span>
             </div>
             <div className="h-10 w-px bg-white/10"></div>
             <div className="flex flex-col">
               <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Decisions</span>
-              <span className="text-3xl font-bold text-white leading-none" style={{ fontFamily: 'Space Grotesk' }}>02</span>
+              <span className="text-3xl font-bold text-white leading-none" style={{ fontFamily: 'Space Grotesk' }}>
+                {isExtracted ? String(extractedDecisions.length).padStart(2, '0') : '--'}
+              </span>
             </div>
           </div>
           <div className="flex items-center gap-8 mr-6">
-            <button className="text-[10px] font-bold text-on-surface-variant hover:text-white uppercase tracking-widest transition-colors">Discard Draft</button>
-            <button className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold px-12 py-4 rounded-xl text-sm uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-emerald-500/20">
-              Confirm & Save All
-            </button>
+            {!isExtracted ? (
+              <button
+                onClick={handleExtract}
+                disabled={isExtracting || !title.trim() || !selectedTeamId || !notes.trim()}
+                className={`flex items-center gap-3 font-bold px-12 py-4 rounded-xl text-sm uppercase tracking-widest transition-all shadow-xl ${isExtracting || !title.trim() || !selectedTeamId || !notes.trim()
+                  ? 'bg-primary-container/50 text-white/50 cursor-not-allowed'
+                  : 'btn-primary-premium text-white hover:scale-[1.02] active:scale-[0.98]'
+                  }`}
+              >
+                {isExtracting ? (
+                  <>
+                    <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
+                    Extracting...
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
+                    Extract with AI
+                  </>
+                )}
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={() => {
+                    setIsExtracted(false);
+                    setExtractedTasks([]);
+                    setExtractedDecisions([]);
+                  }}
+                  className="text-[10px] font-bold text-on-surface-variant hover:text-white uppercase tracking-widest transition-colors"
+                >
+                  Discard & Redo
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold px-12 py-4 rounded-xl text-sm uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-emerald-500/20"
+                >
+                  Confirm & Save All
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

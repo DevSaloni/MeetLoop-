@@ -63,7 +63,7 @@ teamSchema.pre('save', function (next) {
 
 // Virtual: get member count
 teamSchema.virtual('memberCount').get(function () {
-    return this.members.length;
+    return this.members ? this.members.length : 0;
 });
 
 // Ensure virtuals are serialized

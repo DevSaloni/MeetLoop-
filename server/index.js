@@ -1,13 +1,14 @@
+import dotenv from 'dotenv';
+// Load environment variables immediately
+dotenv.config();
+
 import express from 'express';
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
 import cors from 'cors';
 
 import authRoutes from './routes/authRoutes.js';
 import teamRoutes from './routes/teamRoutes.js';
-
-// Load environment variables
-dotenv.config();
+import meetingRoutes from './routes/meetingRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -20,6 +21,7 @@ app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/teams', teamRoutes);
+app.use('/api/meetings', meetingRoutes);
 
 // Basic Route
 app.get('/', (req, res) => {

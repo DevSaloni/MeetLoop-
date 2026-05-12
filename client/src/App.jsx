@@ -15,6 +15,7 @@ import NewMeetingPage from './pages/NewMeetingPage'
 import TeamAccountabilityPage from './pages/TeamAccountabilityPage'
 import AnalyticsPage from './pages/AnalyticsPage'
 import SettingsPage from './pages/SettingsPage'
+import MeetingDetailsPage from './pages/MeetingDetailsPage'
 import DashboardLayout from './components/layout/DashboardLayout'
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -57,6 +58,7 @@ function App() {
           <Route path="/app" element={<DashboardLayout />}>
             <Route index element={<DashboardPage />} />
             <Route path="meetings" element={<MeetingsPage />} />
+            <Route path="meetings/:id" element={<MeetingDetailsPage />} />
             <Route path="new-meeting" element={<NewMeetingPage />} />
             <Route path="commitments" element={<CommitmentsPage />} />
             <Route path="teams" element={<TeamAccountabilityPage />} />

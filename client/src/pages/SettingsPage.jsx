@@ -4,12 +4,17 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 
 const SettingsPage = () => {
-  const { user, setUser, baseUrl } = useAuth();
+  const { user, setUser, logout, baseUrl } = useAuth();
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
     jobRole: user?.jobRole || '',
     profilePic: user?.profilePic || ''
+  });
+  const [preferences, setPreferences] = useState({
+    emailNotifications: user?.preferences?.emailNotifications ?? true,
+    slackSync: user?.preferences?.slackSync ?? true,
+    aiSummaries: user?.preferences?.aiSummaries ?? false
   });
   const [loading, setLoading] = useState(false);
 
@@ -21,11 +26,76 @@ const SettingsPage = () => {
         jobRole: user.jobRole || '',
         profilePic: user.profilePic || ''
       });
+      if (user.preferences) {
+        setPreferences({
+          emailNotifications: user.preferences.emailNotifications ?? true,
+          slackSync: user.preferences.slackSync ?? true,
+          aiSummaries: user.preferences.aiSummaries ?? false
+        });
+      }
     }
   }, [user]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleToggle = async (key) => {
+    const updatedPrefs = { ...preferences, [key]: !preferences[key] };
+    setPreferences(updatedPrefs);
+
+    try {
+      const config = { headers: { Authorization: `Bearer ${user.token}` } };
+      const response = await axios.put(`${baseUrl}/auth/profile`, { preferences: updatedPrefs }, config);
+      const updatedUser = { ...user, ...response.data };
+      setUser(updatedUser);
+      localStorage.setItem('userInfo', JSON.stringify(updatedUser));
+    } catch (error) {
+      toast.error('Failed to update preference');
+      // Rollback on error
+      setPreferences(preferences);
+    }
+  };
+
+  const handlePurgeData = () => {
+    toast((t) => (
+      <div className="flex flex-col gap-3 min-w-[280px] p-1">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-red-500/20 rounded-xl flex items-center justify-center shrink-0">
+            <span className="material-symbols-outlined text-red-500">warning</span>
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-white">Purge All Data?</h4>
+            <p className="text-[10px] text-on-surface-variant leading-relaxed">Account and workspace deletion is permanent.</p>
+          </div>
+        </div>
+        <div className="flex justify-end gap-3 mt-2">
+          <button 
+            onClick={() => toast.dismiss(t.id)} 
+            className="px-4 py-2 text-[10px] font-bold text-on-surface-variant hover:text-white uppercase tracking-widest transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              const loadId = toast.loading('Purging cloud data...');
+              try {
+                const config = { headers: { Authorization: `Bearer ${user.token}` } };
+                await axios.delete(`${baseUrl}/auth/purge`, config);
+                toast.success('Workspace Purged. Redirecting...', { id: loadId });
+                setTimeout(() => logout(), 2000);
+              } catch (error) {
+                toast.error(error.response?.data?.message || 'Purge failed', { id: loadId });
+              }
+            }}
+            className="px-5 py-2.5 text-[10px] font-bold bg-red-500 text-white rounded-xl hover:bg-red-600 transition-all shadow-lg shadow-red-500/20 uppercase tracking-widest"
+          >
+            Confirm Purge
+          </button>
+        </div>
+      </div>
+    ), { duration: Infinity, id: 'purge-confirm' });
   };
 
   const handleSave = async () => {
@@ -46,6 +116,20 @@ const SettingsPage = () => {
       toast.error(error.response?.data?.message || 'Failed to update profile', { id: loadId });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        return toast.error('File size too large (max 5MB)');
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData({ ...formData, profilePic: reader.result });
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -84,9 +168,10 @@ const SettingsPage = () => {
                     getInitial()
                   )}
                 </div>
-                <div className="absolute -bottom-2 -right-2 bg-primary-container text-white p-2 rounded-full shadow-lg cursor-pointer hover:scale-110 transition-transform">
+                <label className="absolute -bottom-2 -right-2 bg-primary-container text-white p-2 rounded-full shadow-lg cursor-pointer hover:scale-110 transition-transform">
                   <span className="material-symbols-outlined text-sm">photo_camera</span>
-                </div>
+                  <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                </label>
               </div>
 
               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
@@ -121,17 +206,6 @@ const SettingsPage = () => {
                     className="w-full bg-surface-container-low border border-white/10 rounded-xl p-3 text-sm text-white focus:border-primary-container outline-none transition-all"
                   />
                 </div>
-                <div className="md:col-span-2 space-y-1.5">
-                  <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Profile Picture URL</label>
-                  <input
-                    type="text"
-                    name="profilePic"
-                    value={formData.profilePic}
-                    onChange={handleChange}
-                    placeholder="https://example.com/photo.jpg"
-                    className="w-full bg-surface-container-low border border-white/10 rounded-xl p-3 text-sm text-white focus:border-primary-container outline-none transition-all"
-                  />
-                </div>
               </div>
             </div>
             <div className="mt-8 pt-6 border-t border-white/5 flex justify-end">
@@ -155,17 +229,20 @@ const SettingsPage = () => {
 
           <div className="bg-surface-container border border-white/5 rounded-2xl p-6 shadow-xl divide-y divide-white/5">
             {[
-              { label: 'Email Notifications', desc: 'Receive daily commitment summaries.', enabled: true },
-              { label: 'Slack Sync', desc: 'Auto-post decisions to project channels.', enabled: true },
-              { label: 'AI Summaries', desc: 'Extract key points after every meeting.', enabled: false }
+              { id: 'emailNotifications', label: 'Email Notifications', desc: 'Receive daily commitment summaries.', enabled: preferences.emailNotifications },
+              { id: 'slackSync', label: 'Slack Sync', desc: 'Auto-post decisions to project channels.', enabled: preferences.slackSync },
+              { id: 'aiSummaries', label: 'AI Summaries', desc: 'Extract key points after every meeting.', enabled: preferences.aiSummaries }
             ].map(pref => (
               <div key={pref.label} className="py-4 flex items-center justify-between">
                 <div>
                   <h4 className="text-sm font-bold text-white">{pref.label}</h4>
                   <p className="text-xs text-on-surface-variant">{pref.desc}</p>
                 </div>
-                <button className={`w-12 h-6 rounded-full relative transition-all ${pref.enabled ? 'bg-primary-container' : 'bg-white/10'}`}>
-                  <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${pref.enabled ? 'right-1' : 'left-1'}`}></div>
+                <button
+                  onClick={() => handleToggle(pref.id)}
+                  className={`w-12 h-6 rounded-full relative transition-all ${pref.enabled ? 'bg-primary-container shadow-[0_0_10px_rgba(249,115,22,0.3)]' : 'bg-white/10'}`}
+                >
+                  <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-md transition-all ${pref.enabled ? 'right-1' : 'left-1'}`}></div>
                 </button>
               </div>
             ))}
@@ -181,10 +258,15 @@ const SettingsPage = () => {
 
           <div className="bg-red-500/[0.02] border border-red-500/10 rounded-2xl p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl">
             <div className="max-w-5xl">
-              <h4 className="text-sm font-bold text-white">Delete Workspace</h4>
-              <p className="text-xs text-on-surface-variant leading-relaxed mt-1">This action is permanent. All meetings, tasks, and historical data will be wiped from the MeetLoop cloud.</p>
+              <h4 className="text-sm font-bold text-white">Purge All Data</h4>
+              <p className="text-xs text-on-surface-variant leading-relaxed mt-1">This action is permanent. All meetings, tasks, and historical data will be wiped from the MeetLoop cloud, and your account will be deleted.</p>
             </div>
-            <button className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border border-red-500/20">Purge Data</button>
+            <button
+              onClick={handlePurgeData}
+              className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border border-red-500/20 shadow-lg shadow-red-500/5"
+            >
+              Purge Data
+            </button>
           </div>
         </section>
       </div>
