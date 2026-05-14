@@ -8,13 +8,21 @@ import {
     deleteMeeting,
     reExtractTasks,
     updateTaskStatus,
-    getMyTasks
+    getMyTasks,
+    sendTaskReminder,
+    extractOnly
 } from '../controllers/meetingController.js';
 
 const router = express.Router();
 
 // All routes are protected
 router.use(protect);
+
+// GET /api/meetings/my-tasks → get all tasks assigned to current user
+router.get('/my-tasks', getMyTasks);
+
+// POST /api/meetings/extract-preview → AI extraction without saving
+router.post('/extract-preview', extractOnly);
 
 // GET /api/meetings          → get all meetings for user's teams
 // POST /api/meetings         → create a new meeting (Team Lead only)
@@ -38,5 +46,8 @@ router.post('/:id/extract', reExtractTasks);
 
 // PUT /api/meetings/:id/tasks/:taskId → update a task's status/details
 router.put('/:id/tasks/:taskId', updateTaskStatus);
+
+// POST /api/meetings/:id/tasks/:taskId/remind → send a reminder to the assignee
+router.post('/:id/tasks/:taskId/remind', sendTaskReminder);
 
 export default router;

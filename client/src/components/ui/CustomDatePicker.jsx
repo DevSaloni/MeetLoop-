@@ -54,11 +54,11 @@ const CustomDatePicker = ({ value, onChange, className = "" }) => {
     <div className={`relative ${className}`} ref={dropdownRef}>
       <div
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full h-12 bg-[#09090B] border ${isOpen ? 'border-primary-container ring-1 ring-primary-container/20 shadow-[0_0_20px_rgba(249,115,22,0.1)]' : 'border-white/10'} rounded-lg px-4 flex items-center justify-between cursor-pointer transition-all duration-300 hover:border-white/20`}
+        className={`w-full min-h-[44px] py-2.5 bg-[#09090B] border ${isOpen ? 'border-primary-container ring-1 ring-primary-container/20 shadow-[0_0_20px_rgba(249,115,22,0.1)]' : 'border-white/10'} rounded-lg px-4 flex items-center justify-between cursor-pointer transition-all duration-300 hover:border-white/20`}
       >
         <div className="flex items-center gap-3">
-          <span className="material-symbols-outlined text-on-surface-variant/60 text-lg">calendar_month</span>
-          <span className={`text-[11px] font-medium ${value ? 'text-white' : 'text-on-surface-variant/40'}`}>
+          <span className="material-symbols-outlined text-on-surface-variant/60 text-base">calendar_month</span>
+          <span className={`text-[10px] font-bold uppercase tracking-widest ${value ? 'text-white' : 'text-on-surface-variant/40'}`}>
             {displayDate}
           </span>
         </div>
@@ -68,24 +68,24 @@ const CustomDatePicker = ({ value, onChange, className = "" }) => {
       </div>
 
       {isOpen && (
-        <div className="absolute top-[calc(100%+8px)] left-0 w-72 bg-[#111113]/98 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.6)] z-[100] p-4 animate-fade-in origin-top">
+        <div className="absolute top-[calc(100%+8px)] left-0 w-72 bg-[#111113]/98 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.6)] z-[110] p-3 animate-fade-in origin-top">
           {/* Calendar Header */}
-          <div className="flex items-center justify-between mb-4">
-            <button onClick={handlePrevMonth} className="p-1.5 hover:bg-white/5 rounded-lg text-on-surface-variant hover:text-white transition-all">
-              <span className="material-symbols-outlined text-lg">chevron_left</span>
+          <div className="flex items-center justify-between mb-2">
+            <button onClick={handlePrevMonth} className="p-1 hover:bg-white/5 rounded-lg text-on-surface-variant hover:text-white transition-all">
+              <span className="material-symbols-outlined text-base">chevron_left</span>
             </button>
-            <div className="text-sm font-bold text-white uppercase tracking-widest">
+            <div className="text-[11px] font-bold text-white uppercase tracking-widest">
               {months[viewDate.getMonth()]} {viewDate.getFullYear()}
             </div>
-            <button onClick={handleNextMonth} className="p-1.5 hover:bg-white/5 rounded-lg text-on-surface-variant hover:text-white transition-all">
-              <span className="material-symbols-outlined text-lg">chevron_right</span>
+            <button onClick={handleNextMonth} className="p-1 hover:bg-white/5 rounded-lg text-on-surface-variant hover:text-white transition-all">
+              <span className="material-symbols-outlined text-base">chevron_right</span>
             </button>
           </div>
 
           {/* Weekday labels */}
-          <div className="grid grid-cols-7 gap-1 mb-2">
+          <div className="grid grid-cols-7 gap-1 mb-1">
             {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
-              <div key={d} className="text-[10px] font-bold text-on-surface-variant/40 text-center uppercase py-1">
+              <div key={d} className="text-[9px] font-bold text-on-surface-variant/40 text-center uppercase py-0.5">
                 {d}
               </div>
             ))}
@@ -109,7 +109,7 @@ const CustomDatePicker = ({ value, onChange, className = "" }) => {
                 <div
                   key={day}
                   onClick={() => handleDateSelect(day)}
-                  className={`aspect-square flex items-center justify-center text-[11px] font-bold rounded-lg cursor-pointer transition-all duration-200
+                  className={`aspect-square flex items-center justify-center text-[10px] font-bold rounded-lg cursor-pointer transition-all duration-200
                     ${isSelected
                       ? 'bg-primary-container text-white shadow-lg shadow-primary-container/30'
                       : isToday
@@ -124,16 +124,16 @@ const CustomDatePicker = ({ value, onChange, className = "" }) => {
           </div>
 
           {/* Footer */}
-          <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center">
+          <div className="mt-2 pt-2 border-t border-white/5 flex justify-between items-center">
             <button
               onClick={() => { onChange(new Date().toISOString().split('T')[0]); setIsOpen(false); }}
-              className="text-[9px] font-bold text-primary-container uppercase tracking-widest hover:underline"
+              className="text-[8px] font-black text-primary-container uppercase tracking-widest hover:underline"
             >
               Today
             </button>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest hover:text-white"
+              className="text-[8px] font-black text-on-surface-variant uppercase tracking-widest hover:text-white"
             >
               Close
             </button>

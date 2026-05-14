@@ -1,6 +1,7 @@
 import Team from '../models/Team.js';
 import User from '../models/User.js';
 import sendEmail from '../utils/sendEmail.js';
+import { sendNotification } from '../utils/notificationHelper.js';
 
 // @desc    Create a new team
 // @route   POST /api/teams
@@ -95,6 +96,16 @@ export const joinTeam = async (req, res) => {
         });
 
         await team.save();
+
+        // Notify Team Lead that someone joined
+        sendNotification({
+            recipient: team.creator,
+            sender: req.user._id,
+            type: 'TEAM_INVITE',
+            title: 'New Team Member',
+            message: `${req.user.name} joined your team "${team.name}"`,
+            link: `/app/teams`
+        });
 
         const populatedTeam = await Team.findById(team._id)
             .populate('creator', 'name email profilePic')

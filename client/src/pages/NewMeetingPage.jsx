@@ -79,7 +79,7 @@ const NewMeetingPage = () => {
     }
   }, [selectedTeamId, teams]);
 
-  // Handle creating meeting + AI extraction
+  // Handle AI extraction preview (No DB save yet)
   const handleExtract = async () => {
     if (!title.trim()) return toast.error('Please enter a meeting title');
     if (!selectedTeamId) return toast.error('Please select a team');
@@ -91,36 +91,14 @@ const NewMeetingPage = () => {
     const loadId = toast.loading('🤖 AI is analyzing your meeting notes...');
 
     try {
-      let data;
-      if (currentMeetingId) {
-        // Update existing meeting first
-        await axios.put(`${baseUrl}/meetings/${currentMeetingId}`, {
-          title: title.trim(),
-          description: description.trim(),
-          date,
-          meetingType,
-          notes: notes.trim()
-        }, config);
-
-        // Then re-extract
-        const res = await axios.post(`${baseUrl}/meetings/${currentMeetingId}/extract`, {}, config);
-        data = res.data;
-      } else {
-        // Create new meeting
-        const res = await axios.post(`${baseUrl}/meetings`, {
-          title: title.trim(),
-          description: description.trim(),
-          teamId: selectedTeamId,
-          date,
-          meetingType,
-          notes: notes.trim()
-        }, config);
-        data = res.data;
-      }
+      // Call preview endpoint instead of creating meeting
+      const { data } = await axios.post(`${baseUrl}/meetings/extract-preview`, {
+        notes: notes.trim(),
+        teamId: selectedTeamId
+      }, config);
 
       setExtractedTasks(data.tasks || []);
       setExtractedDecisions(data.decisions || []);
-      setCurrentMeetingId(data._id);
       setIsExtracted(true);
 
       const taskCount = data.tasks?.length || 0;
@@ -135,21 +113,28 @@ const NewMeetingPage = () => {
 
   // Handle saving final meeting (after review)
   const handleSave = async () => {
-    if (!currentMeetingId) return;
     setIsSaving(true);
-    const loadId = toast.loading('Saving changes...');
+    const loadId = toast.loading('Creating meeting and saving commitments...');
     try {
-      await axios.put(`${baseUrl}/meetings/${currentMeetingId}`, {
+      // Final creation of meeting with ALL data
+      await axios.post(`${baseUrl}/meetings`, {
+        title: title.trim(),
+        description: description.trim(),
+        teamId: selectedTeamId,
+        date,
+        meetingType,
+        notes: notes.trim(),
         tasks: extractedTasks.map(t => ({
           ...t,
           assignedTo: t.assignedTo?._id || t.assignedTo || null
         })),
         decisions: extractedDecisions
       }, config);
-      toast.success('Meeting saved successfully!', { id: loadId });
+
+      toast.success('Meeting recorded and team notified!', { id: loadId });
       setTimeout(() => { navigate('/app/meetings'); }, 1000);
     } catch (err) {
-      toast.error('Failed to save changes', { id: loadId });
+      toast.error('Failed to save meeting', { id: loadId });
       setIsSaving(false);
     }
   };
@@ -228,15 +213,14 @@ const NewMeetingPage = () => {
 
               {/* Date + Team */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[5px] font-bold text-on-surface-variant uppercase tracking-[0.15em]">Date</label>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.15em]">Date</label>
                   <CustomDatePicker
                     value={date}
                     onChange={setDate}
-                    className="h-auto"
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.15em]">Team</label>
                   <CustomSelect
                     options={teams.map(t => t.name)}
@@ -246,20 +230,18 @@ const NewMeetingPage = () => {
                       if (team) setSelectedTeamId(team._id);
                     }}
                     placeholder={isLoadingTeams ? "Loading teams..." : teams.length === 0 ? "No teams found" : "Select Team"}
-                    className="h-auto"
                   />
                 </div>
               </div>
 
               {/* Meeting Type */}
-              <div className="space-y-2 pt-2">
+              <div className="space-y-1.5 pt-2">
                 <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.15em]">Meeting Type</label>
                 <CustomSelect
                   options={MEETING_TYPES}
                   value={meetingType}
                   onChange={setMeetingType}
                   placeholder="Select Type"
-                  className="h-auto"
                 />
               </div>
 
@@ -326,9 +308,9 @@ const NewMeetingPage = () => {
 
       {/* AI Extraction Results — Only shown after extraction */}
       {isExtracted && (
-        <div className="space-y-8 animate-slide-up">
+        <div className="space-y-8 animate-slide-up relative z-[60]">
           {/* Tasks Section */}
-          <section className="bg-surface-container border border-white/5 rounded-2xl p-8 shadow-2xl overflow-hidden relative group">
+          <section className="bg-surface-container border border-white/5 rounded-2xl p-8 shadow-2xl overflow-visible relative group">
             <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
               <span className="material-symbols-outlined text-[120px] text-primary-container">verified</span>
             </div>
@@ -354,8 +336,8 @@ const NewMeetingPage = () => {
                   <p className="text-sm">No tasks were found in the meeting notes.</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left">
+                <div className="overflow-x-auto custom-scrollbar pb-4 -mx-4 md:mx-0 px-4 md:px-0">
+                  <table className="w-full text-left min-w-[700px]">
                     <thead className="border-b border-white/5">
                       <tr>
                         <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Task Description</th>
@@ -370,36 +352,35 @@ const NewMeetingPage = () => {
                         <tr key={task._id || index} className="hover:bg-white/[0.02] transition-colors group">
                           <td className="px-6 py-5 text-sm text-white max-w-[400px] font-medium">{task.description}</td>
                           <td className="px-6 py-5">
-                            <select
+                            <CustomSelect
+                              options={[
+                                { label: 'Unassigned', value: '' },
+                                ...teamMembers.map(m => ({ label: m.name, value: m._id }))
+                              ]}
                               value={task.assignedTo?._id || task.assignedTo || ''}
-                              onChange={(e) => updateTask(index, 'assignedTo', e.target.value || null)}
-                              className="bg-surface-container-low border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:border-primary-container outline-none w-40 appearance-none cursor-pointer"
-                            >
-                              <option value="" className="bg-surface-container">Unassigned</option>
-                              {teamMembers.map(m => (
-                                <option key={m._id} value={m._id} className="bg-surface-container">{m.name}</option>
-                              ))}
-                            </select>
-                          </td>
-                          <td className="px-6 py-5">
-                            <input
-                              type="date"
-                              className="bg-surface-container-low border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:ring-1 focus:ring-primary-container outline-none"
-                              value={task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : ''}
-                              onChange={(e) => updateTask(index, 'dueDate', e.target.value)}
+                              onChange={(val) => updateTask(index, 'assignedTo', val || null)}
+                              className="w-44 !min-h-[36px]"
                             />
                           </td>
                           <td className="px-6 py-5">
-                            <select
+                            <CustomDatePicker
+                              value={task.dueDate}
+                              onChange={(val) => updateTask(index, 'dueDate', val)}
+                              className="w-40 !h-[36px]"
+                            />
+                          </td>
+                          <td className="px-6 py-5">
+                            <CustomSelect
+                              options={[
+                                { label: 'HIGH', value: 'HIGH' },
+                                { label: 'MEDIUM', value: 'MEDIUM' },
+                                { label: 'LOW', value: 'LOW' }
+                              ]}
                               value={task.priority || 'MEDIUM'}
-                              onChange={(e) => updateTask(index, 'priority', e.target.value)}
-                              className="bg-transparent border-none text-xs font-bold outline-none cursor-pointer appearance-none"
-                              style={{ color: task.priority === 'HIGH' ? '#f87171' : task.priority === 'LOW' ? '#60a5fa' : '#f97316' }}
-                            >
-                              <option value="HIGH" className="bg-surface-container text-red-400">HIGH</option>
-                              <option value="MEDIUM" className="bg-surface-container text-primary-container">MEDIUM</option>
-                              <option value="LOW" className="bg-surface-container text-blue-400">LOW</option>
-                            </select>
+                              onChange={(val) => updateTask(index, 'priority', val)}
+                              className="w-32 !min-h-[36px]"
+                              itemClassName={task.priority === 'HIGH' ? 'text-red-400' : task.priority === 'LOW' ? 'text-blue-400' : 'text-primary-container'}
+                            />
                           </td>
                           <td className="px-6 py-5 text-right">
                             <button
@@ -447,29 +428,29 @@ const NewMeetingPage = () => {
       )}
 
       {/* Sticky Action Bar */}
-      <div className="fixed bottom-0 right-0 left-[240px] z-50">
-        <div className="bg-surface-container-highest/95 backdrop-blur-2xl border-t border-white/10 p-6 flex items-center justify-between shadow-[0_-10px_40px_rgba(0,0,0,0.4)]">
-          <div className="flex items-center gap-12 ml-6">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Tasks Found</span>
-              <span className="text-3xl font-bold text-white leading-none" style={{ fontFamily: 'Space Grotesk' }}>
+      <div className="fixed bottom-0 right-0 left-0 lg:left-[240px] z-50">
+        <div className="bg-surface-container-highest/95 backdrop-blur-2xl border-t border-white/10 p-4 md:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-0 shadow-[0_-10px_40px_rgba(0,0,0,0.4)]">
+          <div className="flex items-center gap-6 md:gap-12 w-full sm:w-auto justify-center sm:justify-start sm:ml-6">
+            <div className="flex flex-col items-center sm:items-start">
+              <span className="text-[9px] md:text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Tasks Found</span>
+              <span className="text-2xl md:text-3xl font-bold text-white leading-none" style={{ fontFamily: 'Space Grotesk' }}>
                 {isExtracted ? String(extractedTasks.length).padStart(2, '0') : '--'}
               </span>
             </div>
-            <div className="h-10 w-px bg-white/10"></div>
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Decisions</span>
-              <span className="text-3xl font-bold text-white leading-none" style={{ fontFamily: 'Space Grotesk' }}>
+            <div className="h-8 md:h-10 w-px bg-white/10"></div>
+            <div className="flex flex-col items-center sm:items-start">
+              <span className="text-[9px] md:text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Decisions</span>
+              <span className="text-2xl md:text-3xl font-bold text-white leading-none" style={{ fontFamily: 'Space Grotesk' }}>
                 {isExtracted ? String(extractedDecisions.length).padStart(2, '0') : '--'}
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-8 mr-6">
+          <div className="flex flex-col sm:flex-row items-center gap-3 md:gap-8 w-full sm:w-auto sm:mr-6">
             {!isExtracted ? (
               <button
                 onClick={handleExtract}
                 disabled={isExtracting || !title.trim() || !selectedTeamId || !notes.trim()}
-                className={`flex items-center gap-3 font-bold px-12 py-4 rounded-xl text-sm uppercase tracking-widest transition-all shadow-xl ${isExtracting || !title.trim() || !selectedTeamId || !notes.trim()
+                className={`flex items-center justify-center gap-3 font-bold w-full sm:w-auto px-8 md:px-12 py-3.5 md:py-4 rounded-xl text-xs md:text-sm uppercase tracking-widest transition-all shadow-xl ${isExtracting || !title.trim() || !selectedTeamId || !notes.trim()
                   ? 'bg-primary-container/50 text-white/50 cursor-not-allowed'
                   : 'btn-primary-premium text-white hover:scale-[1.02] active:scale-[0.98]'
                   }`}
@@ -501,7 +482,7 @@ const NewMeetingPage = () => {
                 <button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold px-12 py-4 rounded-xl text-sm uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-emerald-500/20"
+                  className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold w-full sm:w-auto px-8 md:px-12 py-3.5 md:py-4 rounded-xl text-xs md:text-sm uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-emerald-500/20 whitespace-nowrap"
                 >
                   Confirm & Save All
                 </button>

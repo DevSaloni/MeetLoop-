@@ -1,5 +1,6 @@
 import Meeting from '../models/Meeting.js';
 import Team from '../models/Team.js';
+import { sendNotification } from '../utils/notificationHelper.js';
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import dotenv from 'dotenv';
@@ -179,7 +180,22 @@ export const createMeeting = async (req, res) => {
             decisions: []
         });
 
-        if (notes && notes.trim().length > 20) {
+        // If tasks and decisions are provided directly (preview confirm), use them
+        if (req.body.tasks) {
+            meeting.tasks = req.body.tasks.map(t => ({
+                ...t,
+                assignedTo: (t.assignedTo && t.assignedTo !== '') ? t.assignedTo : null,
+                status: t.status || 'open'
+            }));
+            meeting.aiProcessed = true;
+        }
+
+        if (req.body.decisions) {
+            meeting.decisions = req.body.decisions;
+        }
+
+        // Otherwise, if only notes are provided, run AI extraction (legacy or direct flow)
+        if (!req.body.tasks && notes && notes.trim().length > 20) {
             const teamMembers = team.members
                 .filter(m => m.user)
                 .map(m => ({
@@ -222,6 +238,22 @@ export const createMeeting = async (req, res) => {
         }
 
         await meeting.save();
+
+        // ── Real-time Notifications for Tasks ──────────────────────────
+        if (meeting.tasks && meeting.tasks.length > 0) {
+            meeting.tasks.forEach(task => {
+                if (task.assignedTo) {
+                    sendNotification({
+                        recipient: task.assignedTo,
+                        sender: req.user._id,
+                        type: 'TASK_ASSIGNED',
+                        title: 'New Task Assigned',
+                        message: `You were assigned a task in "${meeting.title}": ${task.description}`,
+                        link: `/app/meetings/${meeting._id}`
+                    });
+                }
+            });
+        }
 
         const populatedMeeting = await Meeting.findById(meeting._id)
             .populate('team', 'name logo')
@@ -348,6 +380,38 @@ export const deleteMeeting = async (req, res) => {
     }
 };
 
+// ── @desc    Extract tasks from text without saving ──────────────────
+// ── @route   POST /api/meetings/extract-preview ──────────────────────
+// ── @access  Team Lead only ──────────────────────────────────────────
+export const extractOnly = async (req, res) => {
+    try {
+        const { notes, teamId } = req.body;
+        if (!notes || !teamId) {
+            return res.status(400).json({ message: 'Notes and teamId are required' });
+        }
+
+        const team = await Team.findById(teamId).populate('members.user', 'name email');
+        if (!team) {
+            return res.status(404).json({ message: 'Team not found' });
+        }
+
+        const teamMembers = team.members
+            .filter(m => m.user)
+            .map(m => ({
+                id: m.user._id.toString(),
+                name: m.user.name,
+                email: m.user.email,
+                role: m.role
+            }));
+
+        const aiResult = await extractWithAI(notes, teamMembers);
+        res.json(aiResult);
+    } catch (error) {
+        console.error('Extract Preview Error:', error);
+        res.status(500).json({ message: error.message || 'AI extraction failed' });
+    }
+};
+
 // ── @desc    Re-run AI extraction on existing notes ────────────────────
 // ── @route   POST /api/meetings/:id/extract ────────────────────────────
 // ── @access  Team Lead (creator) only ──────────────────────────────────
@@ -465,6 +529,22 @@ export const reExtractTasks = async (req, res) => {
         meeting.aiProcessed = true;
         await meeting.save();
 
+        // ── Notify newly assigned tasks ──────────────────────────────
+        if (meeting.tasks && meeting.tasks.length > 0) {
+            meeting.tasks.forEach(task => {
+                if (task.assignedTo) {
+                    sendNotification({
+                        recipient: task.assignedTo,
+                        sender: req.user._id,
+                        type: 'TASK_ASSIGNED',
+                        title: 'Task Assignment Update',
+                        message: `Task assignment updated in "${meeting.title}": ${task.description}`,
+                        link: `/app/meetings/${meeting._id}`
+                    });
+                }
+            });
+        }
+
         const populated = await Meeting.findById(meeting._id)
             .populate('team', 'name logo')
             .populate('createdBy', 'name email profilePic')
@@ -508,6 +588,18 @@ export const updateTaskStatus = async (req, res) => {
         if (req.body.description) task.description = req.body.description;
 
         await meeting.save();
+
+        // ── Notify Creator on Task Completion ────────────────────────
+        if (status === 'done' && meeting.createdBy.toString() !== req.user._id.toString()) {
+            sendNotification({
+                recipient: meeting.createdBy,
+                sender: req.user._id,
+                type: 'TASK_COMPLETED',
+                title: 'Task Completed',
+                message: `${req.user.name} completed a task: ${task.description}`,
+                link: `/app/meetings/${meeting._id}`
+            });
+        }
 
         const populated = await Meeting.findById(meeting._id)
             .populate('team', 'name logo')
@@ -563,6 +655,48 @@ export const getMyTasks = async (req, res) => {
         });
 
         res.json(myTasks);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// ── @desc    Send a reminder for a task ──────────────────────────────
+// ── @route   POST /api/meetings/:id/tasks/:taskId/remind ─────────────
+// ── @access  Team Lead / Creator only ────────────────────────────────
+export const sendTaskReminder = async (req, res) => {
+    try {
+        const meeting = await Meeting.findById(req.params.id);
+        if (!meeting) {
+            return res.status(404).json({ message: 'Meeting not found' });
+        }
+
+        const task = meeting.tasks.id(req.params.taskId);
+        if (!task) {
+            return res.status(404).json({ message: 'Task not found' });
+        }
+
+        if (meeting.createdBy.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ message: 'Only the meeting creator can send reminders' });
+        }
+
+        if (!task.assignedTo) {
+            return res.status(400).json({ message: 'Task is unassigned' });
+        }
+
+        if (task.status === 'done') {
+            return res.status(400).json({ message: 'Task is already completed' });
+        }
+
+        await sendNotification({
+            recipient: task.assignedTo,
+            sender: req.user._id,
+            type: 'TASK_REMINDER',
+            title: 'Task Reminder',
+            message: `Reminder: You have an open task from "${meeting.title}": ${task.description}`,
+            link: `/app/meetings/${meeting._id}`
+        });
+
+        res.json({ message: 'Reminder sent successfully' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

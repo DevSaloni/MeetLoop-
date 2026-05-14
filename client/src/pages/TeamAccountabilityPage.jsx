@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useSearch } from '../context/SearchContext';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
 export default function TeamsPage() {
   const { user, baseUrl } = useAuth();
+  const { searchQuery } = useSearch();
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeModal, setActiveModal] = useState(null); // 'create' | 'join' | 'invite' | null
@@ -31,6 +33,12 @@ export default function TeamsPage() {
       setLoading(false);
     }
   };
+
+  const filteredTeams = teams.filter(t =>
+    !searchQuery ||
+    t.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
@@ -255,10 +263,10 @@ export default function TeamsPage() {
           <h1 className="text-4xl font-bold text-white tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>Teams</h1>
           <p className="text-base text-on-surface-variant mt-2">Manage your collaborative workspaces</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 md:gap-4">
           {user?.role === 'Contributor' && (
-            <button onClick={() => setActiveModal('join')} className="btn-primary-premium flex items-center gap-2 px-6 py-3.5 rounded-xl text-base font-bold text-white transition-all">
-              <span className="material-symbols-outlined text-xl">vpn_key</span>
+            <button onClick={() => setActiveModal('join')} className="btn-primary-premium flex items-center gap-2 px-4 md:px-6 py-2.5 md:py-3.5 rounded-xl text-sm md:text-base font-bold text-white transition-all">
+              <span className="material-symbols-outlined text-lg md:text-xl">vpn_key</span>
               Join Team
             </button>
           )}
@@ -268,8 +276,8 @@ export default function TeamsPage() {
               setTeamDesc('');
               setTeamLogo('');
               setActiveModal('create');
-            }} className="btn-primary-premium flex items-center gap-2 px-6 py-3.5 rounded-xl text-base font-bold text-white transition-all">
-              <span className="material-symbols-outlined text-xl">add</span>
+            }} className="btn-primary-premium flex items-center gap-2 px-4 md:px-6 py-2.5 md:py-3.5 rounded-xl text-sm md:text-base font-bold text-white transition-all">
+              <span className="material-symbols-outlined text-lg md:text-xl">add</span>
               New Team
             </button>
           )}
@@ -288,9 +296,9 @@ export default function TeamsPage() {
               ? 'Create a collaborative workspace to start tracking tasks and decisions with your contributors.'
               : 'Ask your Team Lead for an invite code to join their workspace and start collaborating.'}
           </p>
-          <div className="flex items-center justify-center gap-5">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-5">
             {user?.role === 'Contributor' && (
-              <button onClick={() => setActiveModal('join')} className="btn-primary-premium flex items-center gap-2 px-8 py-4 rounded-xl text-[10px] font-bold text-white uppercase tracking-widest transition-all">
+              <button onClick={() => setActiveModal('join')} className="w-full sm:w-auto btn-primary-premium flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-xl text-[10px] font-bold text-white uppercase tracking-widest transition-all">
                 <span className="material-symbols-outlined text-sm">vpn_key</span>
                 Enter Invite Code
               </button>
@@ -301,7 +309,7 @@ export default function TeamsPage() {
                 setTeamDesc('');
                 setTeamLogo('');
                 setActiveModal('create');
-              }} className="btn-primary-premium flex items-center gap-2 px-8 py-4 rounded-xl text-[10px] font-bold text-white uppercase tracking-widest transition-all">
+              }} className="w-full sm:w-auto btn-primary-premium flex items-center justify-center gap-2 px-6 md:px-8 py-3 md:py-4 rounded-xl text-[10px] font-bold text-white uppercase tracking-widest transition-all">
                 <span className="material-symbols-outlined text-sm">add_circle</span>
                 New Team
               </button>
@@ -316,7 +324,7 @@ export default function TeamsPage() {
               <h2 className="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-4 px-2">Your Teams</h2>
             )}
             <div className={`grid ${selectedTeam ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3'} gap-5`}>
-              {teams.map(team => (
+              {filteredTeams.map(team => (
                 <div
                   key={team._id}
                   onClick={() => setSelectedTeam(team)}
@@ -384,8 +392,8 @@ export default function TeamsPage() {
               {/* Premium Panel Header */}
               <div className="p-8 border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-primary-container/10 blur-[80px] rounded-full pointer-events-none transform translate-x-1/2 -translate-y-1/2"></div>
-                <div className="relative z-10 flex items-start justify-between">
-                  <div className="flex items-center gap-5">
+                <div className="relative z-10 flex flex-col sm:flex-row sm:items-start justify-between gap-4 sm:gap-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
                     {selectedTeam.logo ? (
                       <img src={selectedTeam.logo} alt={selectedTeam.name} className="w-16 h-16 rounded-2xl object-cover shadow-lg shadow-black/50 shrink-0 border border-white/10" />
                     ) : (
@@ -394,7 +402,7 @@ export default function TeamsPage() {
                       </div>
                     )}
                     <div>
-                      <h2 className="text-3xl font-bold text-white tracking-tight mb-1" style={{ fontFamily: 'Space Grotesk' }}>{selectedTeam.name}</h2>
+                      <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-1" style={{ fontFamily: 'Space Grotesk' }}>{selectedTeam.name}</h2>
                       {selectedTeam.description && <p className="text-sm text-on-surface-variant max-w-[400px] leading-relaxed">{selectedTeam.description}</p>}
                     </div>
                   </div>
@@ -420,10 +428,10 @@ export default function TeamsPage() {
 
                 {/* Invite Members Call-To-Action (Team Leads Only) */}
                 {isCreator(selectedTeam) && (
-                  <div className="bg-gradient-to-r from-primary-container/10 to-transparent border border-primary-container/20 rounded-2xl p-6 flex items-center justify-between">
+                  <div className="bg-gradient-to-r from-primary-container/10 to-transparent border border-primary-container/20 rounded-2xl p-5 md:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
-                      <h4 className="text-lg font-bold text-white mb-1">Grow Your Team</h4>
-                      <p className="text-sm text-on-surface-variant">Invite contributors to start assigning tasks and tracking accountability.</p>
+                      <h4 className="text-base md:text-lg font-bold text-white mb-1">Grow Your Team</h4>
+                      <p className="text-[13px] md:text-sm text-on-surface-variant">Invite contributors to start assigning tasks and tracking accountability.</p>
                     </div>
                     <button
                       onClick={() => setActiveModal('invite')}
@@ -450,23 +458,23 @@ export default function TeamsPage() {
                       const isCreatorMember = memberId === selectedTeam.creator?._id || memberId === selectedTeam.creator;
 
                       return (
-                        <div key={memberId} className="flex items-center justify-between bg-surface-container-low border border-white/5 rounded-2xl px-5 py-4 hover:border-white/10 transition-all hover:bg-white/[0.02]">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-full bg-surface-bright border-2 border-surface flex items-center justify-center text-sm font-bold text-white overflow-hidden shadow-md">
+                        <div key={memberId} className="flex flex-col sm:flex-row sm:items-center justify-between bg-surface-container-low border border-white/5 rounded-2xl p-4 sm:px-5 sm:py-4 hover:border-white/10 transition-all hover:bg-white/[0.02] gap-4 sm:gap-0">
+                          <div className="flex items-center gap-3 sm:gap-4">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-surface-bright border-2 border-surface flex items-center justify-center text-sm font-bold text-white overflow-hidden shadow-md shrink-0">
                               {memberUser.profilePic ? (
                                 <img src={memberUser.profilePic} alt="" className="w-full h-full object-cover" />
                               ) : (
                                 memberUser.name?.charAt(0)?.toUpperCase() || '?'
                               )}
                             </div>
-                            <div>
+                            <div className="min-w-0">
                               <div className="flex items-center gap-2 mb-0.5">
-                                <span className="text-base font-bold text-white">{memberUser.name || 'Unknown Member'}</span>
+                                <span className="text-sm sm:text-base font-bold text-white truncate">{memberUser.name || 'Unknown Member'}</span>
                                 {isCreatorMember && (
-                                  <span className="text-[10px] font-black text-primary-container bg-primary-container/10 px-2 py-0.5 rounded uppercase tracking-widest border border-primary-container/20">Team Lead</span>
+                                  <span className="text-[9px] sm:text-[10px] font-black text-primary-container bg-primary-container/10 px-1.5 sm:px-2 py-0.5 rounded uppercase tracking-widest border border-primary-container/20 shrink-0">Team Lead</span>
                                 )}
                               </div>
-                              <span className="text-xs text-on-surface-variant">{memberUser.email || 'No email provided'}</span>
+                              <span className="text-[11px] sm:text-xs text-on-surface-variant truncate block">{memberUser.email || 'No email provided'}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-4">
@@ -494,16 +502,16 @@ export default function TeamsPage() {
               </div>
 
               {/* Panel Footer Actions */}
-              <div className="p-6 border-t border-white/5 bg-surface-container-low flex items-center justify-between">
-                <span className="text-xs text-on-surface-variant/50">Workspace ID: {selectedTeam._id}</span>
+              <div className="p-4 sm:p-6 border-t border-white/5 bg-surface-container-low flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
+                <span className="text-[10px] sm:text-xs text-on-surface-variant/50 break-all">Workspace ID: {selectedTeam._id}</span>
                 {isCreator(selectedTeam) ? (
-                  <button onClick={() => handleDeleteTeam(selectedTeam._id)} className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-red-400 bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 hover:border-red-500/20 rounded-xl transition-all uppercase tracking-widest">
-                    <span className="material-symbols-outlined text-lg">delete_forever</span>
+                  <button onClick={() => handleDeleteTeam(selectedTeam._id)} className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 text-[11px] sm:text-sm font-bold text-red-400 bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 hover:border-red-500/20 rounded-xl transition-all uppercase tracking-widest">
+                    <span className="material-symbols-outlined text-base sm:text-lg">delete_forever</span>
                     Delete Team
                   </button>
                 ) : (
-                  <button onClick={() => handleLeaveTeam(selectedTeam._id)} className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-red-400 bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 hover:border-red-500/20 rounded-xl transition-all uppercase tracking-widest">
-                    <span className="material-symbols-outlined text-lg">logout</span>
+                  <button onClick={() => handleLeaveTeam(selectedTeam._id)} className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 text-[11px] sm:text-sm font-bold text-red-400 bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 hover:border-red-500/20 rounded-xl transition-all uppercase tracking-widest">
+                    <span className="material-symbols-outlined text-base sm:text-lg">logout</span>
                     Leave Team
                   </button>
                 )}

@@ -66,11 +66,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 relative">
+    <div className="min-h-screen flex items-center justify-center p-4 md:p-6 relative overflow-y-auto">
       <div className="fixed top-0 left-1/4 w-[500px] h-[500px] bg-primary-container/5 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
       <div className="fixed bottom-0 right-1/4 w-[400px] h-[400px] bg-primary-container/5 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
 
-      <main className="w-full max-w-[440px] glass-card rounded-lg p-8 shadow-2xl animate-fade-in relative z-10">
+      <main className="w-full max-w-[440px] glass-card rounded-2xl p-6 md:p-8 shadow-2xl animate-fade-in relative z-10 my-8">
         <div className="flex flex-col items-center mb-8">
           <Logo className="mb-4 scale-90" />
           <h1 className="text-2xl text-on-surface mb-1 tracking-tight" style={{ fontFamily: 'Space Grotesk', fontWeight: 600 }}>Welcome back</h1>

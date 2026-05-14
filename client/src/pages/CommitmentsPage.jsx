@@ -3,8 +3,11 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
+import { useSearch } from '../context/SearchContext';
+
 const CommitmentsPage = () => {
   const { user, baseUrl } = useAuth();
+  const { searchQuery } = useSearch();
   const [tasks, setTasks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState('All');
@@ -60,6 +63,12 @@ const CommitmentsPage = () => {
 
   // Grouping logic
   const filteredTasks = tasks.filter(t => {
+    const searchMatch = !searchQuery || 
+      t.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.meeting?.title?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    if (!searchMatch) return false;
+
     if (filter === 'Open') return t.status === 'open';
     if (filter === 'Done') return t.status === 'done';
     if (filter === 'Overdue') return t.status === 'open' && t.dueDate && new Date(t.dueDate) < new Date();
@@ -114,16 +123,16 @@ const CommitmentsPage = () => {
       </div>
 
       {/* Tabs & Filters */}
-      <div className="flex items-center justify-between border-b border-white/5 pb-2">
-        <div className="flex gap-8">
+      <div className="flex items-center justify-between border-b border-white/5 pb-2 overflow-x-auto custom-scrollbar whitespace-nowrap">
+        <div className="flex gap-6 md:gap-8 min-w-max pr-4">
           {['All', 'Open', 'Overdue', 'Done'].map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-1 py-3 font-bold text-xs uppercase tracking-widest transition-all ${filter === f ? 'text-primary-container border-b-2 border-primary-container' : 'text-on-surface-variant hover:text-white'
+              className={`px-1 py-3 font-bold text-[10px] md:text-xs uppercase tracking-widest transition-all ${filter === f ? 'text-primary-container border-b-2 border-primary-container' : 'text-on-surface-variant hover:text-white'
                 }`}
             >
-              {f} {f === 'Overdue' && overdueCount > 0 && <span className="ml-1 bg-red-500/10 text-red-400 px-2 py-0.5 rounded text-[10px] font-bold border border-red-500/20">{overdueCount}</span>}
+              {f} {f === 'Overdue' && overdueCount > 0 && <span className="ml-1 bg-red-500/10 text-red-400 px-2 py-0.5 rounded text-[9px] md:text-[10px] font-bold border border-red-500/20">{overdueCount}</span>}
             </button>
           ))}
         </div>
@@ -159,25 +168,27 @@ const CommitmentsPage = () => {
                   const isTaskOverdue = task.status === 'open' && task.dueDate && new Date(task.dueDate) < new Date();
 
                   return (
-                    <div key={task._id} className={`flex items-center gap-6 p-5 hover:bg-white/[0.02] transition-all border-l-4 ${isTaskOverdue ? 'border-red-500' : (task.status === 'done' ? 'border-emerald-500 opacity-60' : 'border-transparent')
+                    <div key={task._id} className={`flex flex-col md:flex-row md:items-center gap-4 md:gap-6 p-4 md:p-5 hover:bg-white/[0.02] transition-all border-l-4 ${isTaskOverdue ? 'border-red-500' : (task.status === 'done' ? 'border-emerald-500 opacity-60' : 'border-transparent')
                       }`}>
-                      <input
-                        type="checkbox"
-                        checked={task.status === 'done'}
-                        onChange={() => updateTaskStatus(meetingId, task._id, task.status === 'done' ? 'open' : 'done')}
-                        className="w-5 h-5 rounded border-white/20 bg-transparent text-primary-container focus:ring-primary-container focus:ring-offset-0 cursor-pointer"
-                      />
-                      <div className="flex-1">
-                        <p className={`text-sm font-medium ${task.status === 'done' ? 'text-on-surface-variant line-through italic' : 'text-white'}`}>
-                          {task.description}
-                        </p>
+                      <div className="flex items-start gap-3 md:gap-4 md:flex-1">
+                        <input
+                          type="checkbox"
+                          checked={task.status === 'done'}
+                          onChange={() => updateTaskStatus(meetingId, task._id, task.status === 'done' ? 'open' : 'done')}
+                          className="w-5 h-5 mt-0.5 md:mt-0 rounded border-white/20 bg-transparent text-primary-container focus:ring-primary-container focus:ring-offset-0 cursor-pointer shrink-0"
+                        />
+                        <div className="flex-1">
+                          <p className={`text-sm md:text-[15px] font-medium leading-relaxed ${task.status === 'done' ? 'text-on-surface-variant line-through italic' : 'text-white'}`}>
+                            {task.description}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <span className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border flex items-center gap-1.5 ${isTaskOverdue
+                      <div className="flex flex-wrap items-center gap-3 pl-8 md:pl-0">
+                        <span className={`px-3 md:px-4 py-1.5 rounded-full text-[9px] md:text-[10px] font-bold uppercase tracking-widest border flex items-center gap-1.5 ${isTaskOverdue
                             ? 'bg-red-500/10 border-red-500/20 text-red-400'
                             : (task.status === 'done' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-white/5 border-white/10 text-on-surface-variant')
                           }`}>
-                          <span className="material-symbols-outlined text-sm">
+                          <span className="material-symbols-outlined text-[12px] md:text-sm">
                             {isTaskOverdue ? 'event_busy' : (task.status === 'done' ? 'check' : 'calendar_today')}
                           </span>
                           {task.status === 'done' ? 'Done' : (isTaskOverdue ? 'Overdue' : `Due: ${new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`)}
@@ -185,7 +196,7 @@ const CommitmentsPage = () => {
                         {task.status !== 'done' && (
                           <button
                             onClick={() => updateTaskStatus(meetingId, task._id, 'done')}
-                            className="bg-white/5 hover:bg-white/10 text-white border border-white/10 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all"
+                            className="bg-white/5 hover:bg-white/10 text-white border border-white/10 px-3 md:px-4 py-2 rounded-lg text-[9px] md:text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap"
                           >
                             Mark Done
                           </button>

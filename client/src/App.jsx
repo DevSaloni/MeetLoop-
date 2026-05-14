@@ -8,6 +8,8 @@ import ResetPasswordPage from './pages/ResetPasswordPage'
 import HowItWorksPage from './pages/HowItWorksPage'
 import FeaturesPage from './pages/FeaturesPage'
 import ForTeamsPage from './pages/ForTeamsPage'
+import AboutPage from './pages/AboutPage'
+import ContactPage from './pages/ContactPage'
 import DashboardPage from './pages/DashboardPage'
 import MeetingsPage from './pages/MeetingsPage'
 import CommitmentsPage from './pages/CommitmentsPage'
@@ -48,6 +50,8 @@ function App() {
         <Route path="/how-it-works" element={<HowItWorksPage />} />
         <Route path="/features" element={<FeaturesPage />} />
         <Route path="/for-teams" element={<ForTeamsPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/contact" element={<ContactPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />

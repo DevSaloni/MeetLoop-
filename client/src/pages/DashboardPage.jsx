@@ -62,7 +62,7 @@ const DashboardPage = () => {
 
   const memberMetrics = [
     { label: "Active Tasks", value: activeTasksCount.toString().padStart(2, '0'), sub: "Assigned to me", icon: "assignment", color: "#60A5FA", progress: `${reliability}%` },
-    { label: "Action Needed", value: activeTasksCount > 0 ? "03" : "00", sub: "Confirm Agreements", icon: "handshake", color: "#FBBF24", progress: "70%", isError: activeTasksCount > 5 },
+    { label: "Upcoming", value: tasks.filter(t => t.status === 'open' && t.dueDate && new Date(t.dueDate) > new Date() && new Date(t.dueDate) < new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)).length.toString().padStart(2, '0'), sub: "Due in 48h", icon: "event_upcoming", color: "#FBBF24", progress: "100%" },
     { label: "My Reliability", value: `${reliability}%`, sub: reliability > 90 ? "Excellent" : "Needs Focus", icon: "verified", color: "#4ADE80", progress: `${reliability}%` },
     { label: "Overdue", value: overdueTasksCount.toString().padStart(2, '0'), sub: "Immediate Action", icon: "warning", color: "#F87171", progress: "100%", isError: overdueTasksCount > 0 }
   ];
@@ -166,21 +166,21 @@ const DashboardPage = () => {
       )}
 
       {/* Dynamic Metric Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {metrics.map((m) => (
-          <div key={m.label} className="bg-surface-container border border-white/5 p-6 rounded-2xl hover:border-primary-container/30 transition-all group relative overflow-hidden">
-            <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">
-              <span className="material-symbols-outlined text-[100px] text-white">{m.icon}</span>
+          <div key={m.label} className="bg-[#111113] border border-white/5 p-5 md:p-6 rounded-2xl hover:border-primary-container/30 transition-all group relative overflow-hidden shadow-lg shadow-black/20">
+            <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
+              <span className="material-symbols-outlined text-[80px] md:text-[100px] text-white">{m.icon}</span>
             </div>
-            <div className="flex justify-between items-start mb-6">
-              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{m.label}</span>
-              <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
-                <span className="material-symbols-outlined text-lg" style={{ color: m.color }}>{m.icon}</span>
+            <div className="flex justify-between items-start mb-4 md:mb-6">
+              <span className="text-[9px] font-black text-on-surface-variant uppercase tracking-widest">{m.label}</span>
+              <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center border border-white/5">
+                <span className="material-symbols-outlined text-lg md:text-xl" style={{ color: m.color }}>{m.icon}</span>
               </div>
             </div>
             <div className="flex items-baseline gap-2 mb-4">
-              <span className={`text-4xl font-bold ${m.isError ? 'text-red-500' : 'text-white'}`} style={{ fontFamily: 'Space Grotesk' }}>{m.value}</span>
-              <span className={`text-[10px] font-bold uppercase tracking-widest ${m.isError ? 'text-red-500/70' : 'text-on-surface-variant'}`}>{m.sub}</span>
+              <span className={`text-3xl md:text-4xl font-bold ${m.isError ? 'text-red-500' : 'text-white'}`} style={{ fontFamily: 'Space Grotesk' }}>{m.value}</span>
+              <span className={`text-[9px] font-black uppercase tracking-widest ${m.isError ? 'text-red-500/70' : 'text-on-surface-variant'}`}>{m.sub}</span>
             </div>
             <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
               <div className="h-full rounded-full transition-all duration-1000" style={{ width: m.progress, backgroundColor: m.color }}></div>
@@ -193,26 +193,26 @@ const DashboardPage = () => {
         {/* Left Section: Context Dependent */}
         <div className="lg:col-span-8 space-y-6">
           {/* Recent Activity / Member Progress */}
-          <div className="bg-surface-container border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
-            <div className="p-6 border-b border-white/5 flex justify-between items-center">
-              <h3 className="text-xl font-bold text-white" style={{ fontFamily: 'Space Grotesk' }}>
+          <div className="bg-[#111113] border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
+            <div className="p-5 md:p-6 border-b border-white/5 flex justify-between items-center">
+              <h3 className="text-lg md:text-xl font-bold text-white uppercase tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
                 {role === 'contributor' ? 'Recent Assignments' : 'Team Member Progress'}
               </h3>
-              <Link to="/app/meetings" className="text-[10px] font-bold text-primary-container hover:underline uppercase tracking-widest">
-                {role === 'contributor' ? 'View All Meetings' : 'View Team Detail'}
+              <Link to="/app/meetings" className="text-[10px] font-black text-primary-container hover:underline uppercase tracking-widest">
+                {role === 'contributor' ? 'View All' : 'Team Detail'}
               </Link>
             </div>
             <div className="overflow-x-auto">
               {role === 'lead' ? (
                 /* Lead: Member Progress Table */
-                <table className="w-full text-left">
+                <table className="w-full text-left min-w-[500px] md:min-w-0">
                   <thead>
-                    <tr className="bg-white/5">
-                      <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Team Member</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-center">Open Tasks</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-center">Completed</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Reliability</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-right">Trend</th>
+                    <tr className="bg-white/[0.02]">
+                      <th className="px-6 py-4 text-[9px] font-black text-on-surface-variant uppercase tracking-widest">Member</th>
+                      <th className="px-6 py-4 text-[9px] font-black text-on-surface-variant uppercase tracking-widest text-center hidden sm:table-cell">Open</th>
+                      <th className="px-6 py-4 text-[9px] font-black text-on-surface-variant uppercase tracking-widest text-center">Done</th>
+                      <th className="px-6 py-4 text-[9px] font-black text-on-surface-variant uppercase tracking-widest">Reliability</th>
+                      <th className="px-6 py-4 text-[9px] font-black text-on-surface-variant uppercase tracking-widest text-right hidden md:table-cell">Trend</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
@@ -233,7 +233,7 @@ const DashboardPage = () => {
                         total: stats.open + stats.done
                       })).sort((a, b) => (b.done / b.total) - (a.done / a.total));
 
-                      if (statsArray.length === 0) return <tr><td colSpan="5" className="p-10 text-center text-on-surface-variant italic">No team member data available.</td></tr>;
+                      if (statsArray.length === 0) return <tr><td colSpan="5" className="p-10 text-center text-on-surface-variant italic text-xs uppercase tracking-widest">No team member data available.</td></tr>;
 
                       return statsArray.slice(0, 5).map((m, i) => {
                         const score = Math.round((m.done / m.total) * 100);
@@ -241,23 +241,23 @@ const DashboardPage = () => {
                           <tr key={i} className="hover:bg-white/[0.02] transition-colors group">
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full overflow-hidden border border-white/10 bg-white/5">
-                                  {m.pic ? <img src={m.pic} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-white">{m.name.charAt(0)}</div>}
+                                <div className="w-8 h-8 rounded-xl overflow-hidden border border-white/10 bg-white/5 shrink-0">
+                                  {m.pic ? <img src={m.pic} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-[10px] font-black text-white">{m.name.charAt(0)}</div>}
                                 </div>
-                                <span className="text-sm font-bold text-white">{m.name}</span>
+                                <span className="text-sm font-bold text-white truncate max-w-[100px] md:max-w-none">{m.name}</span>
                               </div>
                             </td>
-                            <td className="px-6 py-4 text-center text-sm font-medium text-on-surface-variant">{m.open}</td>
-                            <td className="px-6 py-4 text-center text-sm font-medium text-emerald-400">{m.done}</td>
+                            <td className="px-6 py-4 text-center text-xs font-bold text-on-surface-variant hidden sm:table-cell">{m.open}</td>
+                            <td className="px-6 py-4 text-center text-xs font-black text-emerald-400">{m.done}</td>
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-3">
-                                <div className="flex-1 bg-white/5 h-1.5 rounded-full overflow-hidden min-w-[60px]">
+                                <div className="flex-1 bg-white/5 h-1.5 rounded-full overflow-hidden min-w-[40px] md:min-w-[60px]">
                                   <div className="h-full bg-primary-container rounded-full" style={{ width: `${score}%` }}></div>
                                 </div>
-                                <span className="text-xs font-bold text-white">{score}%</span>
+                                <span className="text-[10px] font-black text-white">{score}%</span>
                               </div>
                             </td>
-                            <td className="px-6 py-4 text-right">
+                            <td className="px-6 py-4 text-right hidden md:table-cell">
                               <span className={`material-symbols-outlined text-lg ${score > 80 ? 'text-emerald-400' : 'text-amber-400'}`}>
                                 {score > 80 ? 'trending_up' : 'trending_flat'}
                               </span>
@@ -270,35 +270,37 @@ const DashboardPage = () => {
                 </table>
               ) : (
                 /* Contributor: Recent Assignments Table */
-                <table className="w-full text-left">
+                <table className="w-full text-left min-w-[500px] md:min-w-0">
                   <thead>
-                    <tr className="bg-white/5">
-                      <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Assignment</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Source</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Due Date</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Priority</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-right">Status</th>
+                    <tr className="bg-white/[0.02]">
+                      <th className="px-6 py-4 text-[9px] font-black text-on-surface-variant uppercase tracking-widest">Assignment</th>
+                      <th className="px-6 py-4 text-[9px] font-black text-on-surface-variant uppercase tracking-widest hidden sm:table-cell">Source</th>
+                      <th className="px-6 py-4 text-[9px] font-black text-on-surface-variant uppercase tracking-widest hidden md:table-cell">Due Date</th>
+                      <th className="px-6 py-4 text-[9px] font-black text-on-surface-variant uppercase tracking-widest">Priority</th>
+                      <th className="px-6 py-4 text-[9px] font-black text-on-surface-variant uppercase tracking-widest text-right">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
                     {tasks.slice(0, 5).map((t, i) => (
                       <tr key={i} className="hover:bg-white/[0.02] transition-colors group">
-                        <td className="px-6 py-4 text-sm font-bold text-white leading-tight max-w-[200px] truncate">{t.description}</td>
-                        <td className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase">{t.meeting?.title || 'Direct Task'}</td>
-                        <td className="px-6 py-4 text-[10px] font-bold text-on-surface-variant">{t.dueDate ? new Date(t.dueDate).toLocaleDateString() : 'No Date'}</td>
                         <td className="px-6 py-4">
-                          <span className={`text-[9px] font-bold uppercase tracking-widest ${t.priority === 'HIGH' ? 'text-red-400' : t.priority === 'MEDIUM' ? 'text-amber-400' : 'text-blue-400'}`}>
+                          <div className="text-[13px] font-bold text-white leading-snug line-clamp-2 max-w-[200px]">{t.description}</div>
+                        </td>
+                        <td className="px-6 py-4 text-[10px] font-black text-on-surface-variant uppercase hidden sm:table-cell truncate max-w-[120px]">{t.meeting?.title || 'Direct Task'}</td>
+                        <td className="px-6 py-4 text-[10px] font-bold text-on-surface-variant hidden md:table-cell">{t.dueDate ? new Date(t.dueDate).toLocaleDateString() : 'No Date'}</td>
+                        <td className="px-6 py-4">
+                          <span className={`text-[9px] font-black uppercase tracking-[0.1em] ${t.priority === 'HIGH' ? 'text-red-400' : t.priority === 'MEDIUM' ? 'text-amber-400' : 'text-blue-400'}`}>
                             {t.priority}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <span className={`px-2 py-1 rounded text-[9px] font-bold uppercase border ${t.status === 'done' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-white/5 text-on-surface-variant border-white/10'}`}>
+                          <div className={`inline-flex px-2 py-0.5 rounded text-[9px] font-black uppercase border tracking-widest ${t.status === 'done' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-white/5 text-on-surface-variant border-white/10'}`}>
                             {t.status}
-                          </span>
+                          </div>
                         </td>
                       </tr>
                     ))}
-                    {tasks.length === 0 && <tr><td colSpan="5" className="p-10 text-center text-on-surface-variant italic">You have no active assignments.</td></tr>}
+                    {tasks.length === 0 && <tr><td colSpan="5" className="p-12 text-center text-on-surface-variant italic text-xs uppercase tracking-widest opacity-50">You have no active assignments.</td></tr>}
                   </tbody>
                 </table>
               )}
@@ -306,33 +308,33 @@ const DashboardPage = () => {
           </div>
 
           {/* Secondary Feed: Recent Meetings (Lead) or Detailed Task Breakdown (Contributor) */}
-          <div className="bg-surface-container border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
-            <div className="p-6 border-b border-white/5 flex justify-between items-center">
-              <h3 className="text-xl font-bold text-white" style={{ fontFamily: 'Space Grotesk' }}>
+          <div className="bg-[#111113] border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
+            <div className="p-5 md:p-6 border-b border-white/5 flex justify-between items-center">
+              <h3 className="text-lg md:text-xl font-bold text-white uppercase tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
                 {role === 'lead' ? 'Recent Meetings' : 'Meeting Participation'}
               </h3>
-              <Link to="/app/meetings" className="text-[10px] font-bold text-primary-container hover:underline uppercase tracking-widest">History</Link>
+              <Link to="/app/meetings" className="text-[10px] font-black text-primary-container hover:underline uppercase tracking-widest">History</Link>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left">
+              <table className="w-full text-left min-w-[400px] md:min-w-0">
                 <tbody className="divide-y divide-white/5">
                   {formattedMeetings.map((meeting) => (
-                    <tr key={meeting.id} className="hover:bg-white/[0.02] transition-colors group cursor-pointer" onClick={() => window.location.href = `/app/meetings/${meeting.id}`}>
+                    <tr key={meeting.id} className="hover:bg-white/[0.02] transition-colors group cursor-pointer" onClick={() => navigate(`/app/meetings/${meeting.id}`)}>
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10">
+                          <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10 shrink-0">
                             <span className="material-symbols-outlined text-primary-container">calendar_today</span>
                           </div>
-                          <div>
-                            <div className="text-sm font-bold text-white group-hover:text-primary-container transition-colors leading-tight">{meeting.name}</div>
-                            <div className="text-[10px] font-bold text-on-surface-variant uppercase mt-1">{meeting.date}</div>
+                          <div className="min-w-0">
+                            <div className="text-[13px] font-bold text-white group-hover:text-primary-container transition-colors leading-tight truncate">{meeting.name}</div>
+                            <div className="text-[9px] font-black text-on-surface-variant uppercase mt-1 tracking-widest">{meeting.date}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-5">
+                      <td className="px-6 py-5 hidden sm:table-cell">
                         <div className="flex -space-x-2">
                           {meeting.attendees.map((at, i) => (
-                            <div key={at._id || i} className="w-8 h-8 rounded-full border-2 border-surface-container bg-surface-container-high flex items-center justify-center text-[10px] font-bold text-white shadow-xl overflow-hidden">
+                            <div key={at._id || i} className="w-7 h-7 md:w-8 md:h-8 rounded-full border-2 border-[#111113] bg-surface-container-high flex items-center justify-center text-[9px] font-black text-white shadow-xl overflow-hidden shrink-0">
                               {at.profilePic ? (
                                 <img src={at.profilePic} alt={at.name} className="w-full h-full object-cover" />
                               ) : (
@@ -342,10 +344,10 @@ const DashboardPage = () => {
                           ))}
                         </div>
                       </td>
-                      <td className="px-6 py-5 text-sm font-bold text-on-surface-variant text-right">{meeting.tasksCount} Tasks</td>
+                      <td className="px-6 py-5 text-[11px] font-black text-on-surface-variant text-right tracking-widest uppercase">{meeting.tasksCount} Tasks</td>
                     </tr>
                   ))}
-                  {formattedMeetings.length === 0 && <tr><td colSpan="3" className="p-10 text-center text-on-surface-variant italic">No recent meetings.</td></tr>}
+                  {formattedMeetings.length === 0 && <tr><td colSpan="3" className="p-12 text-center text-on-surface-variant italic text-xs uppercase tracking-widest opacity-50">No recent meetings.</td></tr>}
                 </tbody>
               </table>
             </div>
@@ -354,36 +356,37 @@ const DashboardPage = () => {
 
         {/* Right Section: Priority Focus */}
         <div className="lg:col-span-4 space-y-6">
-          <div className="bg-surface-container border border-white/5 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
-            <div className="mb-8 border-b border-white/5 pb-4 flex justify-between items-center">
-              <h3 className="text-xl font-bold text-white" style={{ fontFamily: 'Space Grotesk' }}>
+          <div className="bg-[#111113] border border-white/5 rounded-2xl p-5 md:p-6 shadow-2xl relative overflow-hidden">
+            <div className="mb-6 md:mb-8 border-b border-white/5 pb-4 flex justify-between items-center">
+              <h3 className="text-lg md:text-xl font-bold text-white uppercase tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
                 {role === 'contributor' ? 'My Next Steps' : 'Operational Risks'}
               </h3>
-              <span className="material-symbols-outlined text-primary-container">
+              <span className="material-symbols-outlined text-primary-container text-2xl">
                 {role === 'contributor' ? 'assignment_turned_in' : 'emergency_home'}
               </span>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4 md:space-y-6">
               {(role === 'contributor' ? personalTasks : teamRisks).length === 0 ? (
-                <div className="py-10 text-center text-on-surface-variant text-xs italic">No items requiring immediate focus.</div>
+                <div className="py-10 text-center text-on-surface-variant text-[10px] font-black uppercase tracking-widest italic opacity-50">Zero Priority Items</div>
               ) : (
                 (role === 'contributor' ? personalTasks : teamRisks).map((item, idx) => (
-                  <div key={idx} className="flex items-start gap-4 p-3 hover:bg-white/5 rounded-xl transition-all group">
-                    <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${item.urgency === 'high' ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-amber-500'}`}></div>
-                    <div className="flex-1">
-                      <p className="text-sm font-bold text-white group-hover:text-primary-container transition-colors line-clamp-2">
+                  <div key={idx} className="flex items-start gap-4 p-3 hover:bg-white/5 rounded-xl transition-all group border border-transparent hover:border-white/5">
+                    <div className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${item.urgency === 'high' ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-amber-500'}`}></div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-bold text-white group-hover:text-primary-container transition-colors line-clamp-2 leading-snug">
                         {item.title}
                       </p>
-                      <p className="text-[10px] font-medium text-on-surface-variant mt-1 leading-relaxed">
+                      <p className="text-[10px] font-bold text-on-surface-variant mt-2 leading-relaxed uppercase tracking-tighter truncate opacity-70">
                         {role === 'contributor' ? `From: ${item.from}` : `Assignee: ${item.from}`}
                       </p>
-                      <div className="mt-3 flex items-center justify-between">
-                        <span className={`text-[9px] font-bold uppercase tracking-widest ${item.urgency === 'high' ? 'text-red-400' : 'text-amber-400'}`}>
+                      <div className="mt-4 flex items-center justify-between">
+                        <span className={`text-[9px] font-black uppercase tracking-widest ${item.urgency === 'high' ? 'text-red-400' : 'text-amber-400'}`}>
                           {role === 'contributor' ? item.due : item.issue}
                         </span>
-                        <Link to={role === 'contributor' ? "/app/commitments" : "/app/meetings"} className="text-[9px] font-bold text-on-surface-variant hover:text-white uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Link to={role === 'contributor' ? "/app/commitments" : "/app/meetings"} className="text-[9px] font-black text-primary-container hover:text-white uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                           {role === 'contributor' ? 'Finish' : 'View'}
+                          <span className="material-symbols-outlined text-xs">arrow_forward</span>
                         </Link>
                       </div>
                     </div>
@@ -391,27 +394,28 @@ const DashboardPage = () => {
                 ))
               )}
             </div>
-            <Link to={role === 'contributor' ? "/app/commitments" : "/app/meetings"} className="block w-full mt-8 py-4 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold text-on-surface-variant hover:text-white text-center transition-all uppercase tracking-widest">
-              {role === 'contributor' ? 'View All Tasks' : 'Open Reports'}
+            <Link to={role === 'contributor' ? "/app/commitments" : "/app/meetings"} className="block w-full mt-8 py-3.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-on-surface-variant hover:text-white text-center transition-all uppercase tracking-[0.2em]">
+              {role === 'contributor' ? 'View All Assignments' : 'Open Reports'}
             </Link>
           </div>
 
           {/* Contextual Action Card */}
           <div className="bg-gradient-to-br from-primary-container to-orange-600 rounded-2xl p-6 shadow-2xl relative overflow-hidden group">
             <div className="relative z-10">
-              <h4 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: 'Space Grotesk' }}>
-                {role === 'contributor' ? 'Boost Reliability' : 'Add New Data'}
+              <h4 className="text-2xl font-bold text-white mb-2 leading-tight" style={{ fontFamily: 'Space Grotesk' }}>
+                {role === 'contributor' ? 'Boost Your Reliability' : 'Add New Team Data'}
               </h4>
-              <p className="text-xs text-white/80 mb-6 leading-relaxed">
+              <p className="text-[11px] font-medium text-white/80 mb-6 leading-relaxed max-w-[240px]">
                 {role === 'contributor'
-                  ? 'Complete your high-priority tasks to improve your reliability score and team visibility.'
-                  : 'Start a new AI extraction to keep the team loop active and identify new commitments.'}
+                  ? 'Complete high-priority tasks to improve your reliability score and team visibility.'
+                  : 'Start a new AI extraction to keep the team loop active and identify commitments.'}
               </p>
-              <Link to={role === 'contributor' ? "/app/commitments" : "/app/new-meeting"} className="inline-block bg-white text-primary-container px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:scale-105 transition-transform active:scale-95 shadow-xl">
+              <Link to={role === 'contributor' ? "/app/commitments" : "/app/new-meeting"} className="inline-flex items-center gap-2 bg-white text-primary-container px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-transform active:scale-95 shadow-xl">
                 {role === 'contributor' ? 'Finish Top Task' : 'New Meeting'}
+                <span className="material-symbols-outlined text-sm">rocket_launch</span>
               </Link>
             </div>
-            <span className="material-symbols-outlined absolute -bottom-8 -right-8 text-[140px] text-white opacity-10 group-hover:rotate-12 transition-transform duration-700 pointer-events-none">
+            <span className="material-symbols-outlined absolute -bottom-8 -right-8 text-[140px] text-white opacity-10 group-hover:rotate-12 transition-transform duration-1000 pointer-events-none">
               {role === 'contributor' ? 'verified' : 'auto_awesome'}
             </span>
           </div>

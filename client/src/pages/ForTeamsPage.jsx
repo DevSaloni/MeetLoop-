@@ -14,7 +14,7 @@ const ForTeamsPage = () => {
         "Auto-sync with GitHub Issues and Jira backlogs.",
         "Clear ownership for bug fixes and infrastructure tasks."
       ],
-      img: "/features/engineering.png"
+      img: "/engineering.png"
     },
     {
       icon: "palette",
@@ -25,7 +25,7 @@ const ForTeamsPage = () => {
         "Track roadmap pivots and feature priority changes.",
         "Automated follow-ups for cross-functional stakeholders."
       ],
-      img: "/features/product.png"
+      img: "/product.png"
     },
     {
       icon: "leaderboard",
@@ -36,7 +36,7 @@ const ForTeamsPage = () => {
         "Identify structural bottlenecks before they impact the bottom line.",
         "Centralized 'Source of Truth' for all strategic decisions."
       ],
-      img: "/features/leadership.png"
+      img: "/leadership.png"
     }
   ];
 
