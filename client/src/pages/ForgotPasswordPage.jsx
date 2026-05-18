@@ -81,9 +81,7 @@ export default function ForgotPasswordPage() {
                 We've sent a password reset link to <b>{email}</b>. Please check your inbox and follow the instructions to reset your password.
               </p>
             </div>
-            <div className="bg-orange-500/5 border border-orange-500/10 rounded-lg p-4 text-xs text-on-surface-variant italic">
-              Don't see the email? Check your spam folder or try again in a few minutes.
-            </div>
+
             <Link to="/login" className="btn-secondary-premium block w-full h-12 text-white font-semibold rounded-lg flex items-center justify-center transition-all">
               Back to Login
             </Link>

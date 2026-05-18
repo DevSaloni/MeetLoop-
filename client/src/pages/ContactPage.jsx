@@ -5,7 +5,11 @@ import CustomSelect from '../components/ui/CustomSelect';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
+import { useAuth } from '../context/AuthContext';
+
 const ContactPage = () => {
+  const { baseUrl } = useAuth();
+
   React.useEffect(() => {
     document.title = "Contact Us | MeetLoop - Support & Inquiries";
     const meta = document.querySelector('meta[name="description"]');
@@ -24,7 +28,7 @@ const ContactPage = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/misc/contact', formData);
+      const response = await axios.post(`${baseUrl}/misc/contact`, formData);
       if (response.data.success) {
         toast.success(response.data.message);
         setFormData({ name: '', email: '', subject: 'General Question', message: '' });

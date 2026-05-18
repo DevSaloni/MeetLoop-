@@ -3,9 +3,11 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
+import { useNotifications } from '../context/NotificationContext';
 
 const DashboardPage = () => {
   const { user, baseUrl } = useAuth();
+  const { socket } = useNotifications();
   const [role, setRole] = useState(user?.role === 'Team Lead' ? 'lead' : 'contributor');
   const [meetings, setMeetings] = useState([]);
   const [tasks, setTasks] = useState([]);
@@ -34,18 +36,86 @@ const DashboardPage = () => {
     if (user) fetchData();
   }, [user]);
 
+  useEffect(() => {
+    if (socket && meetings.length > 0) {
+      // Get unique team IDs from meetings
+      const teamIds = [...new Set(meetings.map(m => m.team?._id).filter(Boolean))];
+
+      teamIds.forEach(id => socket.emit('join_team', id));
+
+      socket.on('meeting_list_update', () => {
+        // Simple refresh for now
+        const fetchData = async () => {
+          try {
+            const [meetingsRes, tasksRes] = await Promise.all([
+              axios.get(`${baseUrl}/meetings`, config),
+              axios.get(`${baseUrl}/meetings/my-tasks`, config)
+            ]);
+            setMeetings(meetingsRes.data);
+            setTasks(tasksRes.data);
+          } catch (err) {
+            console.error('Real-time refresh failed');
+          }
+        };
+        fetchData();
+      });
+
+      return () => {
+        teamIds.forEach(id => socket.emit('leave_team', id));
+        socket.off('meeting_list_update');
+      };
+    }
+  }, [socket, meetings.length]);
+
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <div className="w-14 h-14 border-4 border-primary-container border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-on-surface-variant text-xs uppercase tracking-widest font-bold">Assembling Workspace...</p>
+      <div className="animate-fade-in space-y-8">
+        {/* Header skeleton */}
+        <div className="flex justify-between items-start">
+          <div className="space-y-2">
+            <div className="h-9 w-64 bg-white/5 rounded-xl animate-pulse" />
+            <div className="h-4 w-48 bg-white/5 rounded-lg animate-pulse" />
+          </div>
+          <div className="h-10 w-32 bg-white/5 rounded-xl animate-pulse" />
+        </div>
+        {/* Metric cards skeleton */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="bg-surface-container border border-white/5 p-5 rounded-2xl space-y-3">
+              <div className="flex justify-between items-center">
+                <div className="h-3 w-20 bg-white/5 rounded animate-pulse" />
+                <div className="w-8 h-8 bg-white/5 rounded-lg animate-pulse" />
+              </div>
+              <div className="h-9 w-14 bg-white/5 rounded-lg animate-pulse" />
+              <div className="h-3 w-24 bg-white/5 rounded animate-pulse" />
+            </div>
+          ))}
+        </div>
+        {/* Content rows skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-8 bg-surface-container border border-white/5 rounded-2xl p-6 space-y-4">
+            <div className="h-5 w-36 bg-white/5 rounded-lg animate-pulse" />
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-16 bg-white/5 rounded-xl animate-pulse" />
+            ))}
+          </div>
+          <div className="lg:col-span-4 bg-surface-container border border-white/5 rounded-2xl p-6 space-y-4">
+            <div className="h-5 w-28 bg-white/5 rounded-lg animate-pulse" />
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-12 bg-white/5 rounded-xl animate-pulse" />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
 
   // Calculate Metrics
   const activeTasksCount = tasks.filter(t => t.status === 'open').length;
-  const overdueTasksCount = tasks.filter(t => t.status === 'open' && t.dueDate && new Date(t.dueDate) < new Date()).length;
+  const overdueTasksCount = tasks.filter(t =>
+    t.status === 'overdue' ||
+    (t.status === 'open' && t.dueDate && new Date(t.dueDate) < new Date())
+  ).length;
   const doneTasksCount = tasks.filter(t => t.status === 'done').length;
   const totalTasksCount = tasks.length;
   const reliability = totalTasksCount > 0 ? Math.round((doneTasksCount / totalTasksCount) * 100) : 100;
@@ -195,7 +265,7 @@ const DashboardPage = () => {
           {/* Recent Activity / Member Progress */}
           <div className="bg-[#111113] border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
             <div className="p-5 md:p-6 border-b border-white/5 flex justify-between items-center">
-              <h3 className="text-lg md:text-xl font-bold text-white uppercase tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
+              <h3 className="text-lg md:text-xl font-bold text-white" style={{ fontFamily: 'Space Grotesk' }}>
                 {role === 'contributor' ? 'Recent Assignments' : 'Team Member Progress'}
               </h3>
               <Link to="/app/meetings" className="text-[10px] font-black text-primary-container hover:underline uppercase tracking-widest">
@@ -310,7 +380,7 @@ const DashboardPage = () => {
           {/* Secondary Feed: Recent Meetings (Lead) or Detailed Task Breakdown (Contributor) */}
           <div className="bg-[#111113] border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
             <div className="p-5 md:p-6 border-b border-white/5 flex justify-between items-center">
-              <h3 className="text-lg md:text-xl font-bold text-white uppercase tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
+              <h3 className="text-lg md:text-xl font-bold text-white" style={{ fontFamily: 'Space Grotesk' }}>
                 {role === 'lead' ? 'Recent Meetings' : 'Meeting Participation'}
               </h3>
               <Link to="/app/meetings" className="text-[10px] font-black text-primary-container hover:underline uppercase tracking-widest">History</Link>
@@ -358,7 +428,7 @@ const DashboardPage = () => {
         <div className="lg:col-span-4 space-y-6">
           <div className="bg-[#111113] border border-white/5 rounded-2xl p-5 md:p-6 shadow-2xl relative overflow-hidden">
             <div className="mb-6 md:mb-8 border-b border-white/5 pb-4 flex justify-between items-center">
-              <h3 className="text-lg md:text-xl font-bold text-white uppercase tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
+              <h3 className="text-lg md:text-xl font-bold text-white" style={{ fontFamily: 'Space Grotesk' }}>
                 {role === 'contributor' ? 'My Next Steps' : 'Operational Risks'}
               </h3>
               <span className="material-symbols-outlined text-primary-container text-2xl">

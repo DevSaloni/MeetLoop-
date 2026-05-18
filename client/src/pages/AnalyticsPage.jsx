@@ -32,9 +32,40 @@ const AnalyticsPage = () => {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <div className="w-14 h-14 border-4 border-primary-container border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-on-surface-variant text-xs uppercase tracking-widest font-bold">Loading Analytics...</p>
+      <div className="animate-fade-in space-y-8">
+        {/* Header skeleton */}
+        <div>
+          <div className="h-10 w-40 bg-white/5 rounded-xl animate-pulse mb-2" />
+          <div className="h-4 w-72 bg-white/5 rounded-lg animate-pulse" />
+        </div>
+        {/* Metric cards skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1,2,3,4].map(i => (
+            <div key={i} className="bg-surface-container border border-white/5 p-6 rounded-2xl space-y-4">
+              <div className="flex justify-between">
+                <div className="h-3 w-24 bg-white/5 rounded animate-pulse" />
+                <div className="w-9 h-9 bg-white/5 rounded-xl animate-pulse" />
+              </div>
+              <div className="h-10 w-16 bg-white/5 rounded-lg animate-pulse" />
+              <div className="h-3 w-32 bg-white/5 rounded animate-pulse" />
+            </div>
+          ))}
+        </div>
+        {/* Charts skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-8 bg-surface-container border border-white/5 rounded-2xl p-8">
+            <div className="h-6 w-48 bg-white/5 rounded-lg animate-pulse mb-2" />
+            <div className="h-3 w-64 bg-white/5 rounded animate-pulse mb-8" />
+            <div className="h-64 bg-white/5 rounded-xl animate-pulse" />
+          </div>
+          <div className="lg:col-span-4 bg-surface-container border border-white/5 rounded-2xl p-8">
+            <div className="h-6 w-36 bg-white/5 rounded-lg animate-pulse mb-8" />
+            <div className="w-40 h-40 rounded-full bg-white/5 animate-pulse mx-auto mb-8" />
+            <div className="space-y-3">
+              {[1,2,3].map(i => <div key={i} className="h-3 bg-white/5 rounded animate-pulse" />)}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -45,7 +76,10 @@ const AnalyticsPage = () => {
   const totalTasks = allTasks.length;
   const doneTasks = allTasks.filter(t => t.status === 'done').length;
   const openTasks = allTasks.filter(t => t.status === 'open').length;
-  const overdueTasks = allTasks.filter(t => t.status === 'open' && t.dueDate && new Date(t.dueDate) < new Date()).length;
+  const overdueTasks = allTasks.filter(t =>
+    t.status === 'overdue' ||
+    (t.status === 'open' && t.dueDate && new Date(t.dueDate) < new Date())
+  ).length;
   const completionRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
   const totalDecisions = meetings.reduce((sum, m) => sum + (m.decisions?.length || 0), 0);
   const aiProcessedCount = meetings.filter(m => m.aiProcessed).length;
@@ -96,11 +130,10 @@ const AnalyticsPage = () => {
   });
 
   const leaderboard = Object.values(memberStats)
-    .filter(m => m.role !== 'Team Lead')
     .map(m => ({
       ...m,
       reliability: m.total > 0 ? Math.round((m.done / m.total) * 100) : 0,
-      score: (m.total > 0 ? (m.done / m.total) * 100 : 0) - (m.overdue * 5) // Punctuality penalty
+      score: (m.total > 0 ? (m.done / m.total) * 100 : 0) - (m.overdue * 5)
     }))
     .sort((a, b) => b.score - a.score || b.done - a.done);
 
@@ -320,7 +353,7 @@ const AnalyticsPage = () => {
             <div className="flex-1 flex items-center justify-center text-on-surface-variant text-sm">No meetings yet</div>
           ) : (
             <>
-              {/* Donut chart - completion rate */}
+              {/* Donut chart - overall task completion rate */}
               <div className="flex-1 flex items-center justify-center relative mb-6">
                 <div className="w-44 h-44 rounded-full flex items-center justify-center relative"
                   style={{
@@ -333,7 +366,7 @@ const AnalyticsPage = () => {
                   <div className="w-28 h-28 rounded-full bg-surface-container flex items-center justify-center">
                     <div className="text-center">
                       <span className="text-3xl font-bold text-white" style={{ fontFamily: 'Space Grotesk' }}>{completionRate}%</span>
-                      <p className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mt-1">Done</p>
+                      <p className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mt-1">Completed</p>
                     </div>
                   </div>
                 </div>

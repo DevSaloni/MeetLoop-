@@ -5,9 +5,10 @@ import toast from 'react-hot-toast'
 import Logo from '../components/Logo'
 import { useAuth } from '../context/AuthContext'
 import CustomSelect from '../components/ui/CustomSelect'
+import useDraft from '../hooks/useDraft'
 
 export default function SignupPage() {
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'Contributor' })
+  const [form, setForm, clearFormDraft] = useDraft('draft_signup_form', { name: '', email: '', password: '', role: 'Contributor' })
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const navigate = useNavigate()
@@ -27,10 +28,10 @@ export default function SignupPage() {
     }
   }, [user, navigate, inviteCode]);
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
+  const handleChange = (e) => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
 
   const handleRoleChange = (role) => {
-    setForm({ ...form, role })
+    setForm(prev => ({ ...prev, role }))
   }
 
   const validateEmail = (email) => {
@@ -62,10 +63,12 @@ export default function SignupPage() {
         // Auto-login the user ONLY in the invite flow
         localStorage.setItem('userInfo', JSON.stringify(data));
         setUser(data);
+        clearFormDraft();
         toast.success('Account created successfully!', { id: loadId, duration: 5000 })
         navigate(`/app/teams?invite=${inviteCode}`)
       } else {
         // Normal flow: require manual login
+        clearFormDraft();
         toast.success('Account created! Please sign in.', { id: loadId, duration: 5000 })
         navigate('/login')
       }

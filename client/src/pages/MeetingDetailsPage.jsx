@@ -3,10 +3,13 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { useNotifications } from '../context/NotificationContext';
+import * as mammoth from 'mammoth';
 
 const MeetingDetailsPage = () => {
   const { id } = useParams();
   const { user, baseUrl } = useAuth();
+  const { socket } = useNotifications();
   const navigate = useNavigate();
 
   const [meeting, setMeeting] = useState(null);
@@ -23,6 +26,27 @@ const MeetingDetailsPage = () => {
   useEffect(() => {
     fetchMeetingDetails();
   }, [id, user]);
+
+  useEffect(() => {
+    if (socket && id) {
+      // Join meeting-specific room
+      socket.emit('join_meeting', id);
+
+      // Listen for real-time updates
+      socket.on('meeting_update', (updatedMeeting) => {
+        if (updatedMeeting._id === id) {
+          setMeeting(updatedMeeting);
+          // Optional: toast if someone else updated it
+          // toast.success('Meeting updated by another user');
+        }
+      });
+
+      return () => {
+        socket.off('meeting_update');
+        socket.emit('leave_meeting', id);
+      };
+    }
+  }, [socket, id]);
 
   const fetchMeetingDetails = async () => {
     setIsLoading(true);
@@ -113,6 +137,32 @@ const MeetingDetailsPage = () => {
         </div>
       </div>
     ), { duration: 5000, position: 'top-center', style: { background: '#131315', border: '1px solid rgba(255,255,255,0.1)', minWidth: '350px' } });
+  };
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const fileType = file.name.split('.').pop().toLowerCase();
+    const loadId = toast.loading(`Reading ${file.name}...`);
+
+    try {
+      if (fileType === 'txt' || fileType === 'vtt') {
+        const text = await file.text();
+        setEditedNotes(prev => (prev ? prev + '\n\n' + text : text));
+        toast.success('File loaded successfully!', { id: loadId });
+      } else if (fileType === 'docx') {
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        setEditedNotes(prev => (prev ? prev + '\n\n' + result.value : result.value));
+        toast.success('Document loaded successfully!', { id: loadId });
+      } else {
+        toast.error('Unsupported format. Use .txt, .vtt, or .docx', { id: loadId });
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to read file', { id: loadId });
+    }
+    e.target.value = null; // reset
   };
 
   const sendReminder = async (taskId, memberName) => {
@@ -253,18 +303,31 @@ const MeetingDetailsPage = () => {
 
       {/* Hero Stats Dashboard */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
-        <div className="lg:col-span-8 bg-[#111113] border border-white/5 rounded-2xl p-6 md:p-10 relative overflow-hidden shadow-2xl group min-h-[180px] md:min-h-[220px] flex flex-col justify-center">
-          <div className="absolute top-0 right-0 w-80 h-80 bg-primary-container/5 rounded-full blur-[100px] pointer-events-none -mr-40 -mt-40"></div>
-          <div className="relative z-10 space-y-4 md:space-y-6">
-            <div className="flex items-center gap-3 text-primary-container">
-              <span className="material-symbols-outlined text-xl">auto_awesome</span>
-              <h4 className="text-[10px] font-black uppercase tracking-[0.3em]">AI Executive Summary</h4>
+        {meeting.summary && (
+          <div className="lg:col-span-8 bg-[#111113] border border-white/5 rounded-2xl p-6 md:p-10 relative overflow-hidden shadow-2xl group min-h-[180px] md:min-h-[220px] flex flex-col justify-center">
+            <div className="absolute top-0 right-0 w-80 h-80 bg-primary-container/5 rounded-full blur-[100px] pointer-events-none -mr-40 -mt-40"></div>
+            <div className="relative z-10 space-y-4 md:space-y-6">
+              <div className="flex items-center gap-3 text-primary-container">
+                <span className="material-symbols-outlined text-xl">auto_awesome</span>
+                <h4 className="text-[10px] font-black uppercase tracking-[0.3em]">AI Executive Summary</h4>
+              </div>
+              <p className="text-sm md:text-base text-white/90 leading-relaxed font-medium border-l-4 border-primary-container/30 pl-6 md:pl-8">
+                {meeting.summary.replace(/"/g, '')}
+              </p>
             </div>
-            <p className="text-sm md:text-base text-white/90 leading-relaxed font-medium border-l-4 border-primary-container/30 pl-6 md:pl-8">
-              {meeting.summary ? meeting.summary.replace(/"/g, '') : "AI is still processing the outcomes of this meeting."}
-            </p>
           </div>
-        </div>
+        )}
+        {!meeting.summary && (
+           <div className="lg:col-span-8 bg-[#111113] border border-white/5 rounded-2xl p-6 md:p-10 flex flex-col justify-center items-center text-center space-y-4 border-dashed opacity-60">
+              <span className="material-symbols-outlined text-3xl text-on-surface-variant">psychology_alt</span>
+              <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">No AI Summary Generated Yet</p>
+              {isLead && (
+                <button onClick={handleReExtract} className="text-[9px] font-black text-primary-container hover:underline uppercase tracking-widest">
+                  Generate Summary Now
+                </button>
+              )}
+           </div>
+        )}
         <div className="lg:col-span-4 bg-[#111113] border border-white/5 rounded-2xl p-6 md:p-10 flex flex-col justify-between shadow-2xl">
           <div className="flex justify-between items-center mb-6">
             <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em]">Team Progress</span>
@@ -316,7 +379,7 @@ const MeetingDetailsPage = () => {
 
                   return (
                     <div key={task._id} className="bg-[#111113] border border-white/5 rounded-2xl p-5 md:p-6 transition-all hover:border-primary-container/20 group relative overflow-hidden shadow-lg">
-                      <div className="flex flex-col gap-4 md:gap-6 relative z-10">
+                      <div className="flex flex-row items-center justify-between gap-4 md:gap-6 relative z-10">
                         <div className="flex gap-4 md:gap-5">
                           <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center shrink-0 border-2 transition-all ${task.status === 'done' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : (isOverdue ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-white/5 border-white/10 text-on-surface-variant')}`}>
                             <span className="material-symbols-outlined text-lg md:text-xl font-black">
@@ -352,7 +415,7 @@ const MeetingDetailsPage = () => {
                           </div>
                         </div>
 
-                        <div className="flex items-center md:items-center justify-end gap-3 shrink-0 mt-2 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-white/5">
+                        <div className="flex items-center justify-end gap-3 shrink-0">
                           {isAssignee ? (
                             <button
                               onClick={() => updateTaskStatus(task._id, task.status === 'done' ? 'open' : 'done')}
@@ -404,10 +467,21 @@ const MeetingDetailsPage = () => {
               <div className="bg-[#111113] border border-white/5 rounded-2xl overflow-hidden animate-slide-up w-full shadow-2xl">
                 <div className="px-6 md:px-10 py-5 md:py-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
                   <span className="text-[9px] md:text-[11px] font-black text-on-surface-variant uppercase tracking-[0.2em]">Workspace Transcript</span>
-                  {isLead && !isEditingNotes && (
-                    <button onClick={() => setIsEditingNotes(true)} className="px-6 md:px-8 py-2.5 bg-primary-container rounded-xl text-[9px] md:text-[10px] font-black text-white uppercase tracking-widest hover:bg-primary-container/90 transition-all shadow-xl">
-                      Edit
-                    </button>
+                  {isLead && (
+                    <div className="flex gap-3">
+                      {isEditingNotes && (
+                        <label className="cursor-pointer bg-white/5 border border-white/10 px-4 md:px-6 py-2.5 rounded-xl text-[9px] md:text-[10px] font-black text-white uppercase tracking-widest hover:bg-white/10 transition-all shadow-xl flex items-center gap-2">
+                          <span className="material-symbols-outlined text-sm">upload_file</span>
+                          Upload
+                          <input type="file" accept=".txt,.vtt,.docx" className="hidden" onChange={handleFileUpload} />
+                        </label>
+                      )}
+                      {!isEditingNotes && (
+                        <button onClick={() => setIsEditingNotes(true)} className="px-6 md:px-8 py-2.5 bg-primary-container rounded-xl text-[9px] md:text-[10px] font-black text-white uppercase tracking-widest hover:bg-primary-container/90 transition-all shadow-xl">
+                          Edit
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
                 <div className="p-6 md:p-10 lg:p-12">

@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import CustomSelect from '../components/ui/CustomSelect';
 import CustomDatePicker from '../components/ui/CustomDatePicker';
+import useDraft from '../hooks/useDraft';
 
 const MEETING_TYPES = [
   "Sprint Planning",
@@ -23,13 +24,13 @@ const NewMeetingPage = () => {
   const { user, baseUrl } = useAuth();
   const navigate = useNavigate();
 
-  // Form state
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [meetingType, setMeetingType] = useState('Daily Standup');
-  const [notes, setNotes] = useState('');
-  const [selectedTeamId, setSelectedTeamId] = useState('');
+  // Form state — persisted to localStorage for 2 days
+  const [title, setTitle, clearTitleDraft] = useDraft('draft_meeting_title', '');
+  const [description, setDescription, clearDescDraft] = useDraft('draft_meeting_desc', '');
+  const [date, setDate, clearDateDraft] = useDraft('draft_meeting_date', new Date().toISOString().split('T')[0]);
+  const [meetingType, setMeetingType, clearTypeDraft] = useDraft('draft_meeting_type', 'Daily Standup');
+  const [notes, setNotes, clearNotesDraft] = useDraft('draft_meeting_notes', '');
+  const [selectedTeamId, setSelectedTeamId, clearTeamDraft] = useDraft('draft_meeting_team', '');
 
   // Data state
   const [teams, setTeams] = useState([]);
@@ -43,6 +44,11 @@ const NewMeetingPage = () => {
   const [isExtracted, setIsExtracted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [currentMeetingId, setCurrentMeetingId] = useState(null);
+
+  const clearAllDrafts = () => {
+    clearTitleDraft(); clearDescDraft(); clearDateDraft();
+    clearTypeDraft(); clearNotesDraft(); clearTeamDraft();
+  };
 
   const config = { headers: { Authorization: `Bearer ${user?.token}` } };
 
@@ -111,6 +117,28 @@ const NewMeetingPage = () => {
     }
   };
 
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const fileType = file.name.split('.').pop().toLowerCase();
+    const loadId = toast.loading(`Reading ${file.name}...`);
+
+    try {
+      if (fileType === 'txt' || fileType === 'vtt') {
+        const text = await file.text();
+        setNotes(prev => (prev ? prev + '\n\n' + text : text));
+        toast.success('File loaded successfully!', { id: loadId });
+      } else {
+        toast.error('Unsupported format. Use .txt or .vtt', { id: loadId });
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to read file', { id: loadId });
+    }
+    e.target.value = null; // reset
+  };
+
   // Handle saving final meeting (after review)
   const handleSave = async () => {
     setIsSaving(true);
@@ -132,6 +160,7 @@ const NewMeetingPage = () => {
       }, config);
 
       toast.success('Meeting recorded and team notified!', { id: loadId });
+      clearAllDrafts();
       setTimeout(() => { navigate('/app/meetings'); }, 1000);
     } catch (err) {
       toast.error('Failed to save meeting', { id: loadId });
@@ -166,14 +195,31 @@ const NewMeetingPage = () => {
   return (
     <div className="animate-fade-in pb-32 space-y-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold text-white mb-2" style={{ fontFamily: 'Space Grotesk' }}>Record New Meeting</h1>
           <p className="text-on-surface-variant font-body-md">AI-powered extraction of commitments and decisions.</p>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-primary-container/10 border border-primary-container/20 rounded-full">
-          <span className="material-symbols-outlined text-primary-container text-lg animate-pulse" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
-          <span className="text-[10px] font-bold text-primary-container uppercase tracking-widest">AI Extraction Active</span>
+        <div className="flex items-center gap-3">
+          {(title || notes) && (
+            <button
+              onClick={() => { clearAllDrafts(); setTitle(''); setDescription(''); setNotes(''); setDate(new Date().toISOString().split('T')[0]); setMeetingType('Daily Standup'); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest text-on-surface-variant/50 border border-white/5 hover:border-red-400/30 hover:text-red-400 transition-all"
+            >
+              <span className="material-symbols-outlined text-[14px]">delete_sweep</span>
+              Discard Draft
+            </button>
+          )}
+          {(title || notes) && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.03] border border-white/5 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="text-[9px] font-black text-on-surface-variant/50 uppercase tracking-widest">Draft Auto-Saved</span>
+            </div>
+          )}
+          <div className="flex items-center gap-2 px-4 py-2 bg-primary-container/10 border border-primary-container/20 rounded-full">
+            <span className="material-symbols-outlined text-primary-container text-lg animate-pulse" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
+            <span className="text-[10px] font-bold text-primary-container uppercase tracking-widest">AI Extraction Active</span>
+          </div>
         </div>
       </div>
 
@@ -288,18 +334,29 @@ const NewMeetingPage = () => {
                 <span className="material-symbols-outlined text-primary-container">notes</span>
                 <h3 className="text-xl font-bold text-white" style={{ fontFamily: 'Space Grotesk' }}>Notes & Transcript</h3>
               </div>
+              <label className={`cursor-pointer btn-secondary-premium flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all ${isExtracted ? 'opacity-50 pointer-events-none' : ''}`}>
+                <span className="material-symbols-outlined text-sm">upload_file</span>
+                Upload File
+                <input
+                  type="file"
+                  accept=".txt,.vtt"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                  disabled={isExtracted}
+                />
+              </label>
             </div>
             <div className="flex-1">
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full h-full min-h-[400px] bg-surface-container-low border border-white/10 rounded-2xl p-6 text-sm text-white focus:border-primary-container focus:ring-1 focus:ring-primary-container/20 outline-none transition-all resize-none leading-relaxed placeholder:text-on-surface-variant/20 scrollbar-hide"
-                placeholder="Paste your raw meeting notes or Zoom transcript here..."
+                className="w-full h-full min-h-[400px] bg-surface-container-low border border-white/10 rounded-2xl p-6 text-sm text-white focus:border-primary-container focus:ring-1 focus:ring-primary-container/20 outline-none transition-all resize-none leading-relaxed placeholder:text-on-surface-variant/40 scrollbar-hide"
+                placeholder={"Paste your raw meeting notes, Zoom transcript, or type manually.\n\nExample:\n- Alice will finish the API docs by Friday.\n- Bob needs to update the staging environment.\n- We decided to use MongoDB for the new project."}
                 disabled={isExtracted}
               />
             </div>
             <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-4">
-              <span className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest">Supports: .TXT, .VTT, .DOCX</span>
+              <span className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest">Supports: .TXT, .VTT</span>
               <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Words: {notes.split(/\s+/).filter(x => x).length}</span>
             </div>
           </section>
@@ -336,8 +393,8 @@ const NewMeetingPage = () => {
                   <p className="text-sm">No tasks were found in the meeting notes.</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto custom-scrollbar pb-4 -mx-4 md:mx-0 px-4 md:px-0">
-                  <table className="w-full text-left min-w-[700px]">
+                <div className="overflow-x-auto scrollbar-hide pb-48 -mx-4 md:mx-0 px-4 md:px-0">
+                  <table className="w-full text-left min-w-[800px]">
                     <thead className="border-b border-white/5">
                       <tr>
                         <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Task Description</th>
@@ -354,11 +411,11 @@ const NewMeetingPage = () => {
                           <td className="px-6 py-5">
                             <CustomSelect
                               options={[
-                                { label: 'Unassigned', value: '' },
+                                { label: 'Unassigned', value: null },
                                 ...teamMembers.map(m => ({ label: m.name, value: m._id }))
                               ]}
-                              value={task.assignedTo?._id || task.assignedTo || ''}
-                              onChange={(val) => updateTask(index, 'assignedTo', val || null)}
+                              value={task.assignedTo?._id || task.assignedTo || null}
+                              onChange={(val) => updateTask(index, 'assignedTo', val)}
                               className="w-44 !min-h-[36px]"
                             />
                           </td>

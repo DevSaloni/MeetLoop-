@@ -94,7 +94,8 @@ export const NotificationProvider = ({ children }) => {
             unreadCount,
             markAsRead,
             markAllAsRead,
-            fetchNotifications
+            fetchNotifications,
+            socket
         }}>
             {children}
         </NotificationContext.Provider>

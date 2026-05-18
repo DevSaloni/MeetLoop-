@@ -3,11 +3,13 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
+import { useNotifications } from '../context/NotificationContext';
 
 import { useSearch } from '../context/SearchContext';
 
 const MeetingsPage = () => {
   const { user, baseUrl } = useAuth();
+  const { socket } = useNotifications();
   const navigate = useNavigate();
   const { searchQuery } = useSearch();
   const [meetings, setMeetings] = useState([]);
@@ -23,6 +25,30 @@ const MeetingsPage = () => {
   useEffect(() => {
     fetchMeetings();
   }, [user]);
+
+  useEffect(() => {
+    if (socket && meetings.length > 0) {
+      const teamIds = [...new Set(meetings.map(m => m.team?._id).filter(Boolean))];
+      teamIds.forEach(id => socket.emit('join_team', id));
+
+      socket.on('meeting_list_update', () => {
+        const fetchAgain = async () => {
+          try {
+            const { data } = await axios.get(`${baseUrl}/meetings`, config);
+            setMeetings(data);
+          } catch (err) {
+            console.error('List refresh failed');
+          }
+        };
+        fetchAgain();
+      });
+
+      return () => {
+        teamIds.forEach(id => socket.emit('leave_team', id));
+        socket.off('meeting_list_update');
+      };
+    }
+  }, [socket, meetings.length]);
 
   const fetchMeetings = async () => {
     setIsLoading(true);
@@ -136,9 +162,25 @@ const MeetingsPage = () => {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="bg-[#111113] border border-white/5 rounded-2xl h-[280px] animate-pulse"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8">
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <div key={i} className="bg-surface-container border border-white/5 rounded-2xl p-6 space-y-4 animate-pulse">
+              <div className="flex items-start justify-between">
+                <div className="space-y-2 flex-1">
+                  <div className="h-3 w-20 bg-white/5 rounded-full" />
+                  <div className="h-5 w-3/4 bg-white/5 rounded-lg" />
+                </div>
+                <div className="w-16 h-6 bg-white/5 rounded-full" />
+              </div>
+              <div className="h-3 w-full bg-white/5 rounded" />
+              <div className="h-3 w-2/3 bg-white/5 rounded" />
+              <div className="pt-2 border-t border-white/5 flex items-center justify-between">
+                <div className="flex -space-x-2">
+                  {[1,2,3].map(j => <div key={j} className="w-6 h-6 rounded-full bg-white/5 border-2 border-surface-container" />)}
+                </div>
+                <div className="h-3 w-16 bg-white/5 rounded" />
+              </div>
+            </div>
           ))}
         </div>
       ) : filteredMeetings.length === 0 ? (
@@ -181,7 +223,7 @@ const MeetingsPage = () => {
             }, []) || [];
 
             return (
-              <div key={meeting._id} className="bg-[#111113] border border-white/5 hover:border-primary-container/30 rounded-2xl p-5 md:p-6 flex flex-col gap-5 md:gap-6 transition-all duration-300 group shadow-lg shadow-black/20 relative">
+              <div key={meeting._id} className="bg-[#111113] border border-white/5 hover:border-primary-container/30 rounded-2xl p-4 md:p-5 flex flex-col gap-4 transition-all duration-300 group shadow-lg shadow-black/20 relative">
                 {/* Status Header */}
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
@@ -194,19 +236,19 @@ const MeetingsPage = () => {
                 </div>
 
                 {/* Content */}
-                <div className="min-h-[50px] md:min-h-[60px]">
-                  <h3 className="text-lg md:text-xl font-bold text-white mb-1 md:mb-2 leading-tight group-hover:text-primary-container transition-colors" style={{ fontFamily: 'Space Grotesk' }}>{meeting.title}</h3>
-                  <div className="flex items-center gap-2 text-[10px] md:text-[11px] text-on-surface-variant font-bold uppercase tracking-widest">
-                    <span className="material-symbols-outlined text-xs">groups</span>
+                <div className="min-h-[40px] md:min-h-[45px]">
+                  <h3 className="text-base md:text-lg font-bold text-white mb-1 leading-tight group-hover:text-primary-container transition-colors" style={{ fontFamily: 'Space Grotesk' }}>{meeting.title}</h3>
+                  <div className="flex items-center gap-2 text-[9px] md:text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">
+                    <span className="material-symbols-outlined text-[10px]">groups</span>
                     {meeting.team?.name || 'Unassigned'}
                   </div>
                 </div>
 
                 {/* Attendees and Time */}
-                <div className="flex justify-between items-center py-3 md:py-4 border-y border-white/5">
-                  <div className="flex -space-x-2">
+                <div className="flex justify-between items-center py-2 border-y border-white/5">
+                  <div className="flex -space-x-1.5">
                     {attendees.slice(0, 3).map((attendee, idx) => (
-                      <div key={attendee._id || idx} className="w-7 h-7 md:w-8 md:h-8 rounded-full border-2 border-[#111113] bg-surface-container-high flex items-center justify-center text-[8px] md:text-[9px] font-black text-white overflow-hidden shadow-xl">
+                      <div key={attendee._id || idx} className="w-6 h-6 md:w-7 md:h-7 rounded-full border-2 border-[#111113] bg-surface-container-high flex items-center justify-center text-[7px] md:text-[8px] font-black text-white overflow-hidden shadow-xl">
                         {attendee.profilePic ? (
                            <img src={attendee.profilePic} alt={attendee.name} className="w-full h-full object-cover" />
                         ) : (
@@ -215,13 +257,13 @@ const MeetingsPage = () => {
                       </div>
                     ))}
                     {attendees.length > 3 && (
-                      <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-white/5 border-2 border-[#111113] flex items-center justify-center text-[8px] md:text-[9px] font-black text-on-surface-variant">
+                      <div className="w-6 h-6 md:w-7 md:h-7 rounded-full bg-white/5 border-2 border-[#111113] flex items-center justify-center text-[7px] md:text-[8px] font-black text-on-surface-variant">
                         +{attendees.length - 3}
                       </div>
                     )}
                   </div>
                   <div className="text-right">
-                    <p className="text-[10px] md:text-[11px] font-black text-white uppercase tracking-widest">
+                    <p className="text-[9px] md:text-[10px] font-black text-white uppercase tracking-widest">
                       {new Date(meeting.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </p>
                   </div>
@@ -261,7 +303,7 @@ const MeetingsPage = () => {
                   to={`/app/meetings/${meeting._id}`}
                   className="w-full bg-white/5 hover:bg-primary-container text-white py-3 md:py-3.5 rounded-xl font-black text-center text-[9px] md:text-[10px] uppercase tracking-[0.2em] transition-all group-hover:shadow-lg group-hover:shadow-primary-container/20"
                 >
-                  Enter Command Center
+                  View Details
                 </Link>
               </div>
             );

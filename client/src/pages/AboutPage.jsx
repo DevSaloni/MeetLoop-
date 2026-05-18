@@ -1,8 +1,11 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
+import { useAuth } from '../context/AuthContext';
 
 const AboutPage = () => {
+  const { user } = useAuth();
   React.useEffect(() => {
     document.title = "About Us | MeetLoop - The Accountability Workspace";
     const meta = document.querySelector('meta[name="description"]');
@@ -95,10 +98,10 @@ const AboutPage = () => {
       </section>
 
       {/* Impact Section - Logically replacing generic values */}
-      <section className="bg-[#0E0E10] py-20 md:py-32 border-y border-white/5 relative overflow-hidden">
+      <section className="bg-[#0E0E10] py-16 md:py-32 border-y border-white/5 relative overflow-hidden">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.03)_0%,transparent_70%)]"></div>
         <div className="max-w-7xl mx-auto px-6 md:px-8 relative z-10">
-          <div className="text-center mb-16 md:mb-20 mt-0">
+          <div className="text-center  mb-16 md:mb-20">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4" style={{ fontFamily: 'Space Grotesk' }}>The Execution Framework</h2>
             <p className="text-gray-400 max-w-[500px] mx-auto text-sm md:text-base">We don't measure features; we measure your team's success through these core pillars.</p>
           </div>
@@ -124,7 +127,7 @@ const AboutPage = () => {
 
 
       {/* Final CTA Banner - Optimized for Mobile */}
-      <section className="max-w-7xl mx-auto px-6 md:px-8 pb-20 md:pb-32">
+      <section className="max-w-7xl mx-auto px-6 md:px-8 pb-20 md:pb-32 pt-20">
         <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-[2rem] py-10 md:py-12 px-6 md:px-12 text-center relative overflow-hidden group shadow-2xl shadow-orange-500/20">
           <div className="relative z-10">
             <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
@@ -133,12 +136,21 @@ const AboutPage = () => {
             <p className="text-white/80 text-sm md:text-base max-w-[500px] mx-auto mb-8 leading-relaxed">
               Stop letting your best ideas evaporate after the meeting. Start looping them into action today.
             </p>
-            <button
-              onClick={() => window.location.href = '/signup'}
-              className="bg-white text-orange-600 px-8 py-3.5 rounded-xl font-bold uppercase tracking-widest text-xs hover:scale-105 transition-transform active:scale-95 shadow-xl flex items-center justify-center gap-2 mx-auto"
-            >
-              <span className="material-symbols-outlined text-lg">rocket_launch</span> Get Started for Free
-            </button>
+            {user ? (
+              <Link
+                to="/app"
+                className="bg-white text-orange-600 px-8 py-3.5 rounded-xl font-bold uppercase tracking-widest text-xs hover:scale-105 transition-transform active:scale-95 shadow-xl flex items-center justify-center gap-2 mx-auto w-fit"
+              >
+                <span className="material-symbols-outlined text-lg">dashboard</span> Go to Dashboard
+              </Link>
+            ) : (
+              <Link
+                to="/signup"
+                className="bg-white text-orange-600 px-8 py-3.5 rounded-xl font-bold uppercase tracking-widest text-xs hover:scale-105 transition-transform active:scale-95 shadow-xl flex items-center justify-center gap-2 mx-auto w-fit"
+              >
+                <span className="material-symbols-outlined text-lg">rocket_launch</span> Get Started for Free
+              </Link>
+            )}
           </div>
           <span className="material-symbols-outlined absolute -bottom-16 -right-16 text-[200px] md:text-[260px] text-white opacity-10 group-hover:rotate-12 transition-transform duration-1000 pointer-events-none">
             verified

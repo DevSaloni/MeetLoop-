@@ -13,7 +13,6 @@ const SettingsPage = () => {
   });
   const [preferences, setPreferences] = useState({
     emailNotifications: user?.preferences?.emailNotifications ?? true,
-    slackSync: user?.preferences?.slackSync ?? true,
     aiSummaries: user?.preferences?.aiSummaries ?? false
   });
   const [loading, setLoading] = useState(false);
@@ -29,7 +28,6 @@ const SettingsPage = () => {
       if (user.preferences) {
         setPreferences({
           emailNotifications: user.preferences.emailNotifications ?? true,
-          slackSync: user.preferences.slackSync ?? true,
           aiSummaries: user.preferences.aiSummaries ?? false
         });
       }
@@ -41,6 +39,7 @@ const SettingsPage = () => {
   };
 
   const handleToggle = async (key) => {
+    const previousPrefs = { ...preferences }; // snapshot before change
     const updatedPrefs = { ...preferences, [key]: !preferences[key] };
     setPreferences(updatedPrefs);
 
@@ -52,8 +51,7 @@ const SettingsPage = () => {
       localStorage.setItem('userInfo', JSON.stringify(updatedUser));
     } catch (error) {
       toast.error('Failed to update preference');
-      // Rollback on error
-      setPreferences(preferences);
+      setPreferences(previousPrefs); // rollback to captured snapshot, not stale closure
     }
   };
 
@@ -70,8 +68,8 @@ const SettingsPage = () => {
           </div>
         </div>
         <div className="flex justify-end gap-3 mt-2">
-          <button 
-            onClick={() => toast.dismiss(t.id)} 
+          <button
+            onClick={() => toast.dismiss(t.id)}
             className="px-4 py-2 text-[10px] font-bold text-on-surface-variant hover:text-white uppercase tracking-widest transition-colors"
           >
             Cancel
@@ -197,13 +195,16 @@ const SettingsPage = () => {
                   />
                 </div>
                 <div className="md:col-span-2 space-y-1.5">
-                  <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Email Address</label>
+                  <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
+                    Email Address
+                    <span className="ml-2 text-[8px] text-on-surface-variant/40 normal-case tracking-normal font-normal">(contact support to change)</span>
+                  </label>
                   <input
                     type="email"
                     name="email"
                     value={formData.email}
-                    onChange={handleChange}
-                    className="w-full bg-surface-container-low border border-white/10 rounded-xl p-3 text-sm text-white focus:border-primary-container outline-none transition-all"
+                    readOnly
+                    className="w-full bg-surface-container-low border border-white/5 rounded-xl p-3 text-sm text-on-surface-variant/60 cursor-not-allowed outline-none opacity-60"
                   />
                 </div>
               </div>
@@ -229,9 +230,8 @@ const SettingsPage = () => {
 
           <div className="bg-surface-container border border-white/5 rounded-2xl p-6 shadow-xl divide-y divide-white/5">
             {[
-              { id: 'emailNotifications', label: 'Email Notifications', desc: 'Receive daily commitment summaries.', enabled: preferences.emailNotifications },
-              { id: 'slackSync', label: 'Slack Sync', desc: 'Auto-post decisions to project channels.', enabled: preferences.slackSync },
-              { id: 'aiSummaries', label: 'AI Summaries', desc: 'Extract key points after every meeting.', enabled: preferences.aiSummaries }
+              { id: 'emailNotifications', label: 'In-App Notifications', desc: 'Receive alerts when you are assigned tasks or sent reminders.', enabled: preferences.emailNotifications },
+              { id: 'aiSummaries', label: 'AI Auto-Summaries', desc: 'Auto-extract key points and tasks after every meeting.', enabled: preferences.aiSummaries }
             ].map(pref => (
               <div key={pref.label} className="py-4 flex items-center justify-between">
                 <div>

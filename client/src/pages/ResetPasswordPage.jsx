@@ -32,7 +32,7 @@ export default function ResetPasswordPage() {
       setUser(response.data.userInfo);
       localStorage.setItem('userInfo', JSON.stringify(response.data.userInfo));
 
-      navigate('/app')
+      navigate('/')
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to reset password', { id: loadId })
     } finally {

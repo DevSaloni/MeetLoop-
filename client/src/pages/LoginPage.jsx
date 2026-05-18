@@ -4,9 +4,10 @@ import axios from 'axios'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 import Logo from '../components/Logo'
+import useDraft from '../hooks/useDraft'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
+  const [email, setEmail, clearEmailDraft] = useDraft('draft_login_email', '')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -48,6 +49,7 @@ export default function LoginPage() {
       const response = await axios.post(`${baseUrl}/auth/login`, { email, password });
       setUser(response.data);
       localStorage.setItem('userInfo', JSON.stringify(response.data));
+      clearEmailDraft();
       toast.success('Welcome back!', { id: loadId, duration: 4000 })
 
       if (inviteCode) {

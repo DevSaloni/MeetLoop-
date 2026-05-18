@@ -1,8 +1,10 @@
-import React from 'react';
+import { Link } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
+import { useAuth } from '../context/AuthContext';
 
 const FeaturesPage = () => {
+  const { user } = useAuth();
   const detailedFeatures = [
     {
       role: "FOR TEAM LEADS",
@@ -155,12 +157,21 @@ const FeaturesPage = () => {
             <p className="text-white/80 text-sm md:text-base max-w-[500px] mx-auto mb-8 leading-relaxed">
               Join teams already using MeetLoop to convert every meeting into verifiable action.
             </p>
-            <button
-              onClick={() => window.location.href = '/signup'}
-              className="bg-white text-orange-600 px-8 py-3.5 rounded-xl font-bold uppercase tracking-widest text-xs hover:scale-105 transition-transform active:scale-95 shadow-xl flex items-center justify-center gap-2 mx-auto"
-            >
-              <span className="material-symbols-outlined text-lg">rocket_launch</span> Get Started Free
-            </button>
+            {user ? (
+              <Link
+                to="/app"
+                className="bg-white text-orange-600 px-8 py-3.5 rounded-xl font-bold uppercase tracking-widest text-xs hover:scale-105 transition-transform active:scale-95 shadow-xl flex items-center justify-center gap-2 mx-auto w-fit"
+              >
+                <span className="material-symbols-outlined text-lg">dashboard</span> Go to Dashboard
+              </Link>
+            ) : (
+              <Link
+                to="/signup"
+                className="bg-white text-orange-600 px-8 py-3.5 rounded-xl font-bold uppercase tracking-widest text-xs hover:scale-105 transition-transform active:scale-95 shadow-xl flex items-center justify-center gap-2 mx-auto w-fit"
+              >
+                <span className="material-symbols-outlined text-lg">rocket_launch</span> Get Started Free
+              </Link>
+            )}
           </div>
           <span className="material-symbols-outlined absolute -bottom-16 -right-16 text-[200px] md:text-[260px] text-white opacity-10 group-hover:rotate-12 transition-transform duration-1000 pointer-events-none">
             verified

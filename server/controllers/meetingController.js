@@ -1,6 +1,7 @@
 import Meeting from '../models/Meeting.js';
 import Team from '../models/Team.js';
 import { sendNotification } from '../utils/notificationHelper.js';
+import { io } from '../index.js';
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import dotenv from 'dotenv';
@@ -11,7 +12,7 @@ dotenv.config();
  * Extracts tasks and decisions from meeting notes using Google Gemini AI.
  * Includes robust model rotation and retry logic for quota limits.
  */
-const extractWithAI = async (notes, teamMembers) => {
+const extractWithAI = async (notes, teamMembers, currentUserName = null, currentUserId = null) => {
     try {
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey || apiKey.includes('YOUR_GEMINI_API_KEY')) {
@@ -45,6 +46,7 @@ const extractWithAI = async (notes, teamMembers) => {
 
         const prompt = `You are an AI assistant for a meeting accountability platform called MeetLoop.
 Today is ${today}.
+${(currentUserName && currentUserId) ? `The Team Leader, who is also the person speaking or writing these notes ("me", "I", "myself"), is: **${currentUserName}** (ID: ${currentUserId}).` : ''}
 
 Analyze the following meeting notes and extract:
 1. **Tasks/Commitments** — Any action items, assignments, or promises made by team members.
@@ -64,7 +66,7 @@ Respond in this exact JSON format:
   "tasks": [
     {
       "description": "Clear description of the task",
-      "assignedToId": "the member ID from the list above, or null if unclear",
+      "assignedTo": "the member ID from the list above, or null if unclear",
       "assignedToName": "member name or 'Unassigned'",
       "dueDate": "YYYY-MM-DD format or null if not mentioned",
       "priority": "HIGH or MEDIUM or LOW"
@@ -82,6 +84,7 @@ Rules:
 - **Analyze Dense Paragraphs**: Even if the notes are written as a messy paragraph, carefully extract every implied commitment or decision.
 - **Handle Duplicate Names**: Use the provided Email and Role to distinguish between members with similar names. 
 - **Match Names Intelligently**: Match nicknames (e.g. "Salu") to the closest name in the list.
+- **Identify "Me/I/Team Leader"**: If the notes refer to "me", "I", "myself", or "team leader", assign the task to ID: **${currentUserId || 'null'}**.
 - **Date Conversion**: Convert relative dates (e.g. "tomorrow", "by Friday") to absolute YYYY-MM-DD format based on today's date (${today}).
 - Return ONLY valid JSON. If no tasks/decisions found, return empty arrays.`;
 
@@ -129,7 +132,12 @@ Rules:
             const parsed = JSON.parse(cleanJson);
             return {
                 summary: parsed.summary || '',
-                tasks: Array.isArray(parsed.tasks) ? parsed.tasks : [],
+                tasks: (Array.isArray(parsed.tasks) ? parsed.tasks : []).map(t => ({
+                    description: t.description || '',
+                    assignedTo: t.assignedTo || t.assignedToId || null,
+                    dueDate: t.dueDate || null,
+                    priority: t.priority || 'MEDIUM'
+                })),
                 decisions: Array.isArray(parsed.decisions) ? parsed.decisions : []
             };
         } catch (parseError) {
@@ -205,13 +213,13 @@ export const createMeeting = async (req, res) => {
                     role: m.role
                 }));
 
-            const aiResult = await extractWithAI(notes, teamMembers);
+            const aiResult = await extractWithAI(notes, teamMembers, req.user.name, req.user._id);
 
             meeting.summary = aiResult.summary || '';
 
             if (aiResult.tasks && aiResult.tasks.length > 0) {
                 meeting.tasks = aiResult.tasks.map(t => {
-                    const isValidObjectId = t.assignedToId && /^[0-9a-fA-F]{24}$/.test(t.assignedToId);
+                    const isValidObjectId = t.assignedTo && /^[0-9a-fA-F]{24}$/.test(t.assignedTo);
                     let dueDate = null;
                     if (t.dueDate) {
                         const d = new Date(t.dueDate);
@@ -219,7 +227,7 @@ export const createMeeting = async (req, res) => {
                     }
                     return {
                         description: t.description || 'No description',
-                        assignedTo: isValidObjectId ? t.assignedToId : null,
+                        assignedTo: isValidObjectId ? t.assignedTo : null,
                         dueDate: dueDate,
                         priority: ['HIGH', 'MEDIUM', 'LOW'].includes(t.priority) ? t.priority : 'MEDIUM',
                         status: 'open'
@@ -353,6 +361,11 @@ export const updateMeeting = async (req, res) => {
             .populate('createdBy', 'name email profilePic')
             .populate('tasks.assignedTo', 'name email profilePic');
 
+        if (io) {
+            io.to(`meeting_${meeting._id}`).emit('meeting_update', populated);
+            io.to(`team_${meeting.team._id || meeting.team}`).emit('meeting_list_update');
+        }
+
         res.json(populated);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -404,7 +417,7 @@ export const extractOnly = async (req, res) => {
                 role: m.role
             }));
 
-        const aiResult = await extractWithAI(notes, teamMembers);
+        const aiResult = await extractWithAI(notes, teamMembers, req.user.name, req.user._id);
         res.json(aiResult);
     } catch (error) {
         console.error('Extract Preview Error:', error);
@@ -430,15 +443,17 @@ export const reExtractTasks = async (req, res) => {
             return res.status(400).json({ message: 'Notes are too short for extraction' });
         }
 
-        const team = await Team.findById(meeting.team).populate('members.user', 'name');
+        const team = await Team.findById(meeting.team).populate('members.user', 'name email');
         const teamMembers = team.members
             .filter(m => m.user)
             .map(m => ({
                 id: m.user._id.toString(),
-                name: m.user.name
+                name: m.user.name,
+                email: m.user.email,
+                role: m.role
             }));
 
-        const aiResult = await extractWithAI(meeting.notes, teamMembers);
+        const aiResult = await extractWithAI(meeting.notes, teamMembers, req.user.name, req.user._id);
 
         meeting.summary = aiResult.summary || '';
 
@@ -464,7 +479,7 @@ export const reExtractTasks = async (req, res) => {
             };
 
             meeting.tasks = aiResult.tasks.map(t => {
-                const isValidObjectId = t.assignedToId && /^[0-9a-fA-F]{24}$/.test(t.assignedToId);
+                const isValidObjectId = t.assignedTo && /^[0-9a-fA-F]{24}$/.test(t.assignedTo);
                 const desc = t.description || 'No description';
                 const descLower = desc.toLowerCase().trim();
                 const descWords = new Set(descLower.split(/\s+/).filter(w => w.length > 3));
@@ -511,7 +526,7 @@ export const reExtractTasks = async (req, res) => {
 
                 return {
                     description: desc,
-                    assignedTo: isValidObjectId ? t.assignedToId : (matchedExisting?.assignedTo || null),
+                    assignedTo: isValidObjectId ? t.assignedTo : (matchedExisting?.assignedTo || null),
                     dueDate: t.dueDate ? new Date(t.dueDate) : (matchedExisting?.dueDate || null),
                     priority: t.priority || (matchedExisting?.priority || 'MEDIUM'),
                     status: matchedExisting?.status || 'open'
@@ -549,6 +564,11 @@ export const reExtractTasks = async (req, res) => {
             .populate('team', 'name logo')
             .populate('createdBy', 'name email profilePic')
             .populate('tasks.assignedTo', 'name email profilePic');
+
+        if (io) {
+            io.to(`meeting_${meeting._id}`).emit('meeting_update', populated);
+            io.to(`team_${meeting.team._id || meeting.team}`).emit('meeting_list_update');
+        }
 
         res.json(populated);
     } catch (error) {
@@ -605,6 +625,11 @@ export const updateTaskStatus = async (req, res) => {
             .populate('team', 'name logo')
             .populate('createdBy', 'name email profilePic')
             .populate('tasks.assignedTo', 'name email profilePic');
+
+        if (io) {
+            io.to(`meeting_${meeting._id}`).emit('meeting_update', populated);
+            io.to(`team_${meeting.team._id || meeting.team}`).emit('meeting_list_update');
+        }
 
         res.json(populated);
     } catch (error) {

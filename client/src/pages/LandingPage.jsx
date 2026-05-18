@@ -46,7 +46,7 @@ export default function LandingPage() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-24 pb-16 lg:pt-24 lg:pb-20">
+      <section className="relative overflow-hidden pt-24 pb-12 lg:pt-32 lg:pb-16">
         {/* Glow Effects */}
         <div className="absolute top-[-120px] left-[10%] lg:left-[20%] w-[300px] lg:w-[500px] h-[300px] lg:h-[500px] bg-orange-500/10 blur-[100px] lg:blur-[140px] rounded-full"></div>
         <div className="absolute bottom-[-120px] right-[5%] lg:right-[10%] w-[250px] lg:w-[400px] h-[250px] lg:h-[400px] bg-orange-500/10 blur-[100px] lg:blur-[140px] rounded-full"></div>
@@ -101,7 +101,7 @@ export default function LandingPage() {
             <div className="relative flex justify-center lg:justify-end animate-fade-in delay-200">
               <div className="absolute w-[300px] lg:w-[450px] h-[300px] lg:h-[300px] bg-orange-500/10 blur-[80px] lg:blur-[120px] rounded-full"></div>
               <div className="relative border border-white/10 rounded-2xl lg:rounded-3xl bg-white/[0.03] p-1.5 lg:p-2 backdrop-blur-xl shadow-2xl overflow-hidden transform hover:scale-[1.02] transition-transform duration-500">
-                <img src="/hero.png" alt="MeetLoop Dashboard" className="w-full max-w-[520px] h-auto rounded-[12px] lg:rounded-[22px] shadow-inner" />
+                <img src="/hero.png" alt="MeetLoop Dashboard" className="w-full max-w-[450px] h-auto max-h-[430px] object-contain rounded-[12px] lg:rounded-[22px] shadow-inner" />
               </div>
             </div>
           </div>
@@ -221,13 +221,13 @@ export default function LandingPage() {
       </section>
 
       {/* Final CTA Banner */}
-      <section className="max-w-7xl mx-auto px-6 lg:px-8 pb-32">
-        <div className="bg-gradient-to-br from-orange-600 to-orange-700 rounded-2xl lg:rounded-[40px] py-16 px-8 lg:px-20 text-center relative overflow-hidden group shadow-3xl">
+      <section className="max-w-7xl mx-auto px-6 lg:px-8 pb-32 pt-32">
+        <div className="bg-gradient-to-br from-orange-600 to-orange-700 rounded-2xl lg:rounded-[32px] py-8 px-6 lg:px-16 text-center relative overflow-hidden group shadow-3xl">
           <div className="relative z-10 animate-fade-in">
-            <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-6 tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
+            <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold text-white mb-4 tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
               Ready to Close the Loop?
             </h2>
-            <p className="text-white/80 text-base md:text-xl max-w-[600px] mx-auto mb-10 leading-relaxed">
+            <p className="text-white/80 text-sm md:text-lg max-w-[550px] mx-auto mb-8 leading-relaxed">
               Join high-performance teams using MeetLoop to automate their accountability and drive real project results.
             </p>
 

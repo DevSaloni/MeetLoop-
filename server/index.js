@@ -39,13 +39,29 @@ app.use('/api/misc', miscRoutes);
 
 // Basic Route
 app.get('/', (req, res) => {
-    res.send('MeetLoop API is running...');
+  res.send('MeetLoop API is running...');
 });
 
 // Socket.io connection logic
 io.on('connection', (socket) => {
   socket.on('join', (userId) => {
     socket.join(userId);
+  });
+
+  socket.on('join_meeting', (meetingId) => {
+    socket.join(`meeting_${meetingId}`);
+  });
+
+  socket.on('leave_meeting', (meetingId) => {
+    socket.leave(`meeting_${meetingId}`);
+  });
+
+  socket.on('join_team', (teamId) => {
+    socket.join(`team_${teamId}`);
+  });
+
+  socket.on('leave_team', (teamId) => {
+    socket.leave(`team_${teamId}`);
   });
 
   socket.on('disconnect', () => {
@@ -57,12 +73,12 @@ export { io };
 
 // Database Connection
 mongoose.connect(process.env.MONGODB_URI)
-    .then(() => {
-        console.log('Connected to MongoDB');
-        server.listen(PORT, () => {
-            console.log(`Server is running on port ${PORT}`);
-        });
-    })
-    .catch((err) => {
-        console.error('MongoDB connection error:', err);
+  .then(() => {
+    console.log('Connected to MongoDB');
+    server.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
     });
+  })
+  .catch((err) => {
+    console.error('MongoDB connection error:', err);
+  });
