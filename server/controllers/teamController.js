@@ -2,6 +2,7 @@ import Team from '../models/Team.js';
 import User from '../models/User.js';
 import sendEmail from '../utils/sendEmail.js';
 import { sendNotification } from '../utils/notificationHelper.js';
+import { io } from '../index.js';
 
 // @desc    Create a new team
 // @route   POST /api/teams
@@ -106,6 +107,13 @@ export const joinTeam = async (req, res) => {
             message: `${req.user.name} joined your team "${team.name}"`,
             link: `/app/teams`
         });
+
+        if (io) {
+            io.to(`team_${team._id}`).emit('team_update', {
+                teamId: team._id,
+                action: 'member_joined'
+            });
+        }
 
         const populatedTeam = await Team.findById(team._id)
             .populate('creator', 'name email profilePic')
@@ -241,6 +249,14 @@ export const removeMember = async (req, res) => {
 
         await team.save();
 
+        if (io) {
+            io.to(`team_${team._id}`).emit('team_update', {
+                teamId: team._id,
+                action: 'member_removed',
+                userId: req.params.userId
+            });
+        }
+
         const updatedTeam = await Team.findById(team._id)
             .populate('creator', 'name email profilePic')
             .populate('members.user', 'name email profilePic role jobRole');
@@ -279,6 +295,14 @@ export const leaveTeam = async (req, res) => {
         );
 
         await team.save();
+
+        if (io) {
+            io.to(`team_${team._id}`).emit('team_update', {
+                teamId: team._id,
+                action: 'member_left',
+                userId: req.user._id
+            });
+        }
 
         res.status(200).json({
             success: true,

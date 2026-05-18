@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSearch } from '../context/SearchContext';
+import { useNotifications } from '../context/NotificationContext';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
 export default function TeamsPage() {
   const { user, baseUrl } = useAuth();
   const { searchQuery } = useSearch();
+  const { socket } = useNotifications();
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeModal, setActiveModal] = useState(null); // 'create' | 'join' | 'invite' | null
@@ -24,16 +26,21 @@ export default function TeamsPage() {
   const authHeader = { headers: { Authorization: `Bearer ${user?.token}` } };
   const clientUrl = window.location.origin;
 
-  const fetchTeams = async () => {
+  const fetchTeams = useCallback(async () => {
     try {
       const { data } = await axios.get(`${baseUrl}/teams`, authHeader);
       setTeams(data.data);
+      setSelectedTeam(prevSelected => {
+        if (!prevSelected) return null;
+        const updated = data.data.find(t => t._id === prevSelected._id);
+        return updated || prevSelected;
+      });
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [baseUrl, user?.token]);
 
   const filteredTeams = teams.filter(t =>
     !searchQuery ||
@@ -54,7 +61,44 @@ export default function TeamsPage() {
       window.history.replaceState({}, document.title, '/app/teams');
     }
     fetchTeams();
-  }, []);
+  }, [fetchTeams]);
+
+  useEffect(() => {
+    if (socket) {
+      const handleNotification = (notification) => {
+        if (notification.type === 'TEAM_INVITE') {
+          fetchTeams();
+        }
+      };
+
+      socket.on('notification', handleNotification);
+
+      return () => {
+        socket.off('notification', handleNotification);
+      };
+    }
+  }, [socket, fetchTeams]);
+
+  useEffect(() => {
+    if (socket && teams.length > 0) {
+      const teamIds = teams.map(t => t._id);
+
+      // Join each team room
+      teamIds.forEach(id => socket.emit('join_team', id));
+
+      const handleTeamUpdate = (data) => {
+        fetchTeams();
+      };
+
+      socket.on('team_update', handleTeamUpdate);
+
+      return () => {
+        // Leave each team room and clean up listener
+        teamIds.forEach(id => socket.emit('leave_team', id));
+        socket.off('team_update', handleTeamUpdate);
+      };
+    }
+  }, [socket, teams.map(t => t._id).join(','), fetchTeams]);
 
   const handleLogoUpload = (e) => {
     const file = e.target.files[0];

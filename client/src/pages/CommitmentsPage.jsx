@@ -63,10 +63,10 @@ const CommitmentsPage = () => {
 
   // Grouping logic
   const filteredTasks = tasks.filter(t => {
-    const searchMatch = !searchQuery || 
+    const searchMatch = !searchQuery ||
       t.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.meeting?.title?.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     if (!searchMatch) return false;
 
     if (filter === 'Open') return t.status === 'open';
@@ -185,8 +185,8 @@ const CommitmentsPage = () => {
                       </div>
                       <div className="flex flex-wrap items-center gap-3 pl-8 md:pl-0">
                         <span className={`px-3 md:px-4 py-1.5 rounded-full text-[9px] md:text-[10px] font-bold uppercase tracking-widest border flex items-center gap-1.5 ${isTaskOverdue
-                            ? 'bg-red-500/10 border-red-500/20 text-red-400'
-                            : (task.status === 'done' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-white/5 border-white/10 text-on-surface-variant')
+                          ? 'bg-red-500/10 border-red-500/20 text-red-400'
+                          : (task.status === 'done' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-white/5 border-white/10 text-on-surface-variant')
                           }`}>
                           <span className="material-symbols-outlined text-[12px] md:text-sm">
                             {isTaskOverdue ? 'event_busy' : (task.status === 'done' ? 'check' : 'calendar_today')}
@@ -210,10 +210,6 @@ const CommitmentsPage = () => {
           ))
         )}
       </div>
-
-      <footer className="pt-12 text-center border-t border-white/5">
-        <p className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-[0.2em]">MeetLoop Accountability Workspace © 2024. Focused execution on every meeting.</p>
-      </footer>
     </div>
   );
 };
