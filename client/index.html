@@ -5,145 +5,91 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Primary SEO Meta Tags -->
-  <title>MeetLoop | AI-Powered Meeting Accountability Platform</title>
+  <!-- ============================================================
+       SEO CORE
+  ============================================================ -->
+  <title>MeetLoop | AI Meeting Notes, Action Items & Accountability Tool</title>
   <meta name="description"
-    content="MeetLoop transforms meetings into measurable results. AI-powered task extraction, commitment tracking, and team accountability — all in one workspace. Start for free." />
+    content="MeetLoop uses AI to automatically capture meeting decisions, extract action items, and track team commitments. Stop losing follow-ups — try MeetLoop free." />
   <meta name="keywords"
-    content="AI meeting tool, meeting accountability software, AI task extraction, meeting action items tracker, team accountability platform, automated meeting notes, meeting commitment tracker, project management AI" />
-  <meta name="author" content="MeetLoop Inc." />
-  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
-
-  <!-- Canonical URL -->
+    content="AI meeting notes, meeting accountability, action items tracker, meeting summary tool, team commitments, meeting follow-up, AI productivity tool" />
+  <meta name="author" content="MeetLoop" />
+  <meta name="robots" content="index, follow" />
   <link rel="canonical" href="https://meetloop-jet.vercel.app/" />
 
-  <!-- Open Graph / Facebook / WhatsApp / LinkedIn -->
+  <!-- ============================================================
+       OPEN GRAPH (Facebook, LinkedIn, WhatsApp previews)
+  ============================================================ -->
   <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="MeetLoop" />
   <meta property="og:url" content="https://meetloop-jet.vercel.app/" />
-  <meta property="og:title" content="MeetLoop | AI-Powered Meeting Accountability Platform" />
+  <meta property="og:title" content="MeetLoop | AI Meeting Notes, Action Items & Accountability Tool" />
   <meta property="og:description"
-    content="Stop letting meeting commitments evaporate. MeetLoop uses AI to extract tasks, assign owners, and track accountability automatically." />
+    content="MeetLoop uses AI to automatically capture meeting decisions, extract action items, and track team commitments. Stop losing follow-ups — try MeetLoop free." />
   <meta property="og:image" content="https://meetloop-jet.vercel.app/og-image.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:site_name" content="MeetLoop" />
+  <meta property="og:image:alt" content="MeetLoop — AI-powered meeting accountability platform" />
   <meta property="og:locale" content="en_US" />
 
-  <!-- Twitter Card -->
+  <!-- ============================================================
+       TWITTER / X CARD
+  ============================================================ -->
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@meetloop" />
   <meta name="twitter:url" content="https://meetloop-jet.vercel.app/" />
-  <meta name="twitter:title" content="MeetLoop | AI-Powered Meeting Accountability" />
+  <meta name="twitter:title" content="MeetLoop | AI Meeting Notes, Action Items & Accountability Tool" />
   <meta name="twitter:description"
-    content="Transform meetings into measurable results. AI task extraction + team accountability in one workspace." />
+    content="MeetLoop uses AI to automatically capture meeting decisions, extract action items, and track team commitments. Stop losing follow-ups — try MeetLoop free." />
   <meta name="twitter:image" content="https://meetloop-jet.vercel.app/og-image.png" />
+  <meta name="twitter:image:alt" content="MeetLoop — AI-powered meeting accountability platform" />
 
-  <!-- Additional SEO Meta -->
-  <meta name="theme-color" content="#f97316" />
-  <meta name="msapplication-TileColor" content="#f97316" />
-  <meta name="application-name" content="MeetLoop" />
-  <meta name="apple-mobile-web-app-title" content="MeetLoop" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-
-  <!-- Structured Data - Organization -->
+  <!-- ============================================================
+       JSON-LD STRUCTURED DATA (Google Rich Results)
+  ============================================================ -->
   <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "MeetLoop",
+    "url": "https://meetloop-jet.vercel.app/",
+    "logo": "https://meetloop-jet.vercel.app/favicon.svg",
+    "description": "MeetLoop uses AI to automatically capture meeting decisions, extract action items, and track team commitments.",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD",
+      "description": "Free to try"
+    },
+    "creator": {
+      "@type": "Organization",
       "name": "MeetLoop",
-      "applicationCategory": "BusinessApplication",
-      "operatingSystem": "Web",
-      "description": "AI-powered meeting accountability platform that extracts tasks, tracks commitments, and drives team accountability automatically.",
-      "url": "https://meetloop-jet.vercel.app",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
-      },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.8",
-        "ratingCount": "120"
-      },
-      "featureList": [
-        "AI Task Extraction from Meeting Transcripts",
-        "Digital Handshake Commitment Confirmation",
-        "Team Accountability Dashboard",
-        "Reliability Score Analytics",
-        "Real-time Task Tracking",
-        "Global Search Across Meetings"
-      ],
-      "author": {
-        "@type": "Organization",
-        "name": "MeetLoop Inc.",
-        "url": "https://meetloop-jet.vercel.app"
-      }
+      "url": "https://meetloop-jet.vercel.app/"
     }
+  }
   </script>
 
-  <!-- Structured Data - FAQPage (for How It Works page FAQs) -->
-  <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "How does MeetLoop turn meeting notes into tasks?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Paste your transcript into the New Meeting form. Gemini AI reads it, extracts every action item, assigns it to the right person, sets a priority, and generates an executive summary — all in seconds."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "What is a Reliability Score?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "It's your personal performance metric: tasks completed ÷ total tasks assigned × 100. A score above 90% shows as Excellent on your dashboard. It updates live every time you mark a task done."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Do all team members need an account?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Yes. Each member gets their own dashboard to view and complete their tasks. The Team Lead shares a unique team code — members sign up and join instantly."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Can I manage multiple teams?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Absolutely. Create separate workspaces for Engineering, Marketing, or any department. All teams appear in your sidebar and each has its own meetings, tasks, and analytics."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "What if the AI misses a task or assigns it wrong?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "You stay in full control. Edit the transcript anytime from the Notes tab, then hit 'Refresh AI Context' to re-run the analysis. All existing task statuses are preserved."
-          }
-        }
-      ]
-    }
-  </script>
-
-  <!-- Favicon -->
+  <!-- ============================================================
+       FAVICON
+  ============================================================ -->
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="apple-touch-icon" href="/favicon.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
-  <!-- Google Fonts (deduplicated) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- ============================================================
+       FONTS (your original fonts — duplicates removed)
+  ============================================================ -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
     href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap"
-    rel="stylesheet">
-  <link
-    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
     rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+    rel="stylesheet" />
+
+  <meta name="google-site-verification" content="2C01uNbcOKL5rntSymg1awO2ybMa2xIJp_jZitN8CKA" />
 </head>
 
 <body>
