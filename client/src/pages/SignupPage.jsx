@@ -6,6 +6,7 @@ import Logo from '../components/Logo'
 import { useAuth } from '../context/AuthContext'
 import CustomSelect from '../components/ui/CustomSelect'
 import useDraft from '../hooks/useDraft'
+import SEOHead from '../components/SEOHead'
 
 export default function SignupPage() {
   const [form, setForm, clearFormDraft] = useDraft('draft_signup_form', { name: '', email: '', password: '', role: 'Contributor' })
@@ -83,6 +84,12 @@ export default function SignupPage() {
 
   return (
     <div className="bg-[#09090B] text-on-surface min-h-screen flex items-center justify-center p-4 md:p-6 relative overflow-y-auto">
+      <SEOHead
+        title="Create Your Free Account"
+        description="Sign up for MeetLoop free. Start extracting tasks from meeting transcripts with AI and build team accountability in minutes."
+        path="/signup"
+        keywords="sign up MeetLoop, free meeting tool, create meeting workspace account"
+      />
       <div className="fixed top-0 left-1/4 w-[500px] h-[500px] bg-primary-container/5 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
       <div className="fixed bottom-0 right-1/4 w-[400px] h-[400px] bg-primary-container/5 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
 

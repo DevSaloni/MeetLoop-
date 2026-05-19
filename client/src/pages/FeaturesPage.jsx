@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import { useAuth } from '../context/AuthContext';
+import SEOHead from '../components/SEOHead';
 
 const FeaturesPage = () => {
   const { user } = useAuth();
@@ -71,6 +72,12 @@ const FeaturesPage = () => {
 
   return (
     <div className="min-h-screen bg-[#09090B] text-[#E5E1E4]">
+      <SEOHead
+        title="Features — AI Task Extraction, Accountability & Analytics"
+        description="Explore MeetLoop's powerful features: AI-powered task extraction from transcripts, commitment cards, reliability score analytics, accountability reminders, and decision logs for teams."
+        path="/features"
+        keywords="AI task extraction, meeting commitment tracking, team reliability score, accountability reminders, decision log software, meeting action items"
+      />
       <Navbar />
 
       {/* Hero */}

@@ -1,13 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
+import SEOHead from '../components/SEOHead';
 
 const HowItWorksPage = () => {
   const [openFaq, setOpenFaq] = useState(0);
 
-  useEffect(() => {
-    document.title = "How It Works | MeetLoop - The Accountability Engine";
-  }, []);
+
 
   const steps = [
     {
@@ -77,6 +76,12 @@ const HowItWorksPage = () => {
 
   return (
     <div className="min-h-screen bg-[#09090B] text-[#E5E1E4]">
+      <SEOHead
+        title="How It Works — 6-Step Guide to Meeting Accountability"
+        description="See how MeetLoop works in 6 simple steps: onboard your team, paste transcripts, AI extracts tasks, digital handshake confirmation, global search, and track reliability scores."
+        path="/how-it-works"
+        keywords="how MeetLoop works, AI meeting tool tutorial, meeting transcript to tasks, team onboarding, digital handshake, reliability score"
+      />
       <Navbar />
 
       {/* Hero Section */}

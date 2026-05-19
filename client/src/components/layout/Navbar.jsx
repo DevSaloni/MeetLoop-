@@ -50,7 +50,7 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="fixed top-0 w-full z-[100] bg-[#09090B]/80 backdrop-blur-xl border-b border-white/5 transition-all duration-300">
+      <nav className="fixed top-0 w-full z-[100] bg-[#09090B]/80 backdrop-blur-xl border-b border-white/5 transition-all duration-300" aria-label="Main navigation">
         <div className="flex justify-between items-center h-16 md:h-20 px-6 lg:px-8 w-full max-w-7xl mx-auto">
           <Link to="/" onClick={() => setIsMenuOpen(false)} className="relative z-[110]">
             <Logo />

@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 import Logo from '../components/Logo'
 import useDraft from '../hooks/useDraft'
+import SEOHead from '../components/SEOHead'
 
 export default function LoginPage() {
   const [email, setEmail, clearEmailDraft] = useDraft('draft_login_email', '')
@@ -69,6 +70,11 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 md:p-6 relative overflow-y-auto">
+      <SEOHead
+        title="Sign In to Your Workspace"
+        description="Sign in to MeetLoop to access your team dashboard, track commitments, and manage meeting accountability."
+        path="/login"
+      />
       <div className="fixed top-0 left-1/4 w-[500px] h-[500px] bg-primary-container/5 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
       <div className="fixed bottom-0 right-1/4 w-[400px] h-[400px] bg-primary-container/5 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
 

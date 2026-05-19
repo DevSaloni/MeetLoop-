@@ -3,17 +3,18 @@ import { Link } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import { useAuth } from '../context/AuthContext';
+import SEOHead from '../components/SEOHead';
 
 const AboutPage = () => {
   const { user } = useAuth();
-  React.useEffect(() => {
-    document.title = "About Us | MeetLoop - The Accountability Workspace";
-    const meta = document.querySelector('meta[name="description"]');
-    if (meta) meta.setAttribute("content", "Learn about MeetLoop's mission to kill unproductive meetings through AI task extraction and automated accountability.");
-  }, []);
-
   return (
     <div className="min-h-screen bg-[#09090B] text-[#E5E1E4]">
+      <SEOHead
+        title="About Us — Our Mission to End Unproductive Meetings"
+        description="Learn how MeetLoop was built to kill the unproductive meeting cycle. Our AI-powered platform bridges the gap between decisions and action for high-performance teams."
+        path="/about"
+        keywords="about MeetLoop, meeting productivity platform, team execution software, AI meeting accountability"
+      />
       <Navbar />
 
       {/* Hero Section */}

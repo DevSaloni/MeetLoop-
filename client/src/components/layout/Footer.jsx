@@ -32,6 +32,41 @@ const Footer = () => {
           </p>
         </div>
 
+        {/* SEO Navigation Links - Important for Internal Linking */}
+        <nav aria-label="Footer navigation" className="mb-12 md:mb-16">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-3xl mx-auto">
+            <div className="space-y-3 text-center md:text-left">
+              <h4 className="text-[10px] font-bold text-orange-500 uppercase tracking-[0.2em]">Product</h4>
+              <ul className="space-y-2">
+                <li><Link to="/features" className="text-xs text-gray-500 hover:text-orange-400 transition-colors">Features</Link></li>
+                <li><Link to="/how-it-works" className="text-xs text-gray-500 hover:text-orange-400 transition-colors">How It Works</Link></li>
+                <li><Link to="/for-teams" className="text-xs text-gray-500 hover:text-orange-400 transition-colors">For Teams</Link></li>
+              </ul>
+            </div>
+            <div className="space-y-3 text-center md:text-left">
+              <h4 className="text-[10px] font-bold text-orange-500 uppercase tracking-[0.2em]">Company</h4>
+              <ul className="space-y-2">
+                <li><Link to="/about" className="text-xs text-gray-500 hover:text-orange-400 transition-colors">About Us</Link></li>
+                <li><Link to="/contact" className="text-xs text-gray-500 hover:text-orange-400 transition-colors">Contact</Link></li>
+              </ul>
+            </div>
+            <div className="space-y-3 text-center md:text-left">
+              <h4 className="text-[10px] font-bold text-orange-500 uppercase tracking-[0.2em]">Get Started</h4>
+              <ul className="space-y-2">
+                <li><Link to="/signup" className="text-xs text-gray-500 hover:text-orange-400 transition-colors">Sign Up Free</Link></li>
+                <li><Link to="/login" className="text-xs text-gray-500 hover:text-orange-400 transition-colors">Sign In</Link></li>
+              </ul>
+            </div>
+            <div className="space-y-3 text-center md:text-left">
+              <h4 className="text-[10px] font-bold text-orange-500 uppercase tracking-[0.2em]">Resources</h4>
+              <ul className="space-y-2">
+                <li><a href="/sitemap.xml" target="_blank" rel="noopener noreferrer" className="text-xs text-gray-500 hover:text-orange-400 transition-colors">Sitemap</a></li>
+                <li><a href="mailto:contact@meetloop.ai" className="text-xs text-gray-500 hover:text-orange-400 transition-colors">Email Us</a></li>
+              </ul>
+            </div>
+          </div>
+        </nav>
+
         {/* Bottom Bar: Socials + Info */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-10 pt-12 border-t border-white/5">
           {/* Social Icons - Premium Style */}
@@ -46,6 +81,7 @@ const Footer = () => {
                 href={social.link}
                 className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-on-surface-variant hover:text-orange-500 hover:border-orange-500/30 hover:bg-orange-500/5 transition-all duration-300 group"
                 title={social.label}
+                rel="noopener noreferrer"
               >
                 <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">
                   {social.icon}
@@ -57,7 +93,7 @@ const Footer = () => {
           {/* Copyright & Meta info - Reduced Font Size */}
           <div className="flex flex-col md:items-end gap-3 text-center md:text-right">
             <div className="text-[9px] md:text-[10px] font-black text-on-surface-variant/40 uppercase tracking-[0.2em]">
-              © 2026 MeetLoop Inc.
+              © 2026 MeetLoop Inc. All rights reserved.
             </div>
 
           </div>

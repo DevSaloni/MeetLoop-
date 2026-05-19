@@ -4,17 +4,14 @@ import Footer from '../components/layout/Footer';
 import CustomSelect from '../components/ui/CustomSelect';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import SEOHead from '../components/SEOHead';
 
 import { useAuth } from '../context/AuthContext';
 
 const ContactPage = () => {
   const { baseUrl } = useAuth();
 
-  React.useEffect(() => {
-    document.title = "Contact Us | MeetLoop - Support & Inquiries";
-    const meta = document.querySelector('meta[name="description"]');
-    if (meta) meta.setAttribute("content", "Get in touch with the MeetLoop team for support, enterprise sales, or feedback. We're here to help your team close the loop.");
-  }, []);
+
 
   const [formData, setFormData] = useState({
     name: '',
@@ -50,6 +47,12 @@ const ContactPage = () => {
 
   return (
     <div className="min-h-screen bg-[#09090B] text-[#E5E1E4]">
+      <SEOHead
+        title="Contact Us — Support, Demos & Enterprise Inquiries"
+        description="Get in touch with MeetLoop for support, enterprise onboarding demos, AI feature feedback, or partnership inquiries. We help teams close the accountability loop."
+        path="/contact"
+        keywords="contact MeetLoop, meeting tool support, enterprise meeting software, demo request, AI meeting tool help"
+      />
       <Navbar />
 
       {/* Main Contact Section */}

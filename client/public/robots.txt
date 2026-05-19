@@ -1,0 +1,10 @@
+# MeetLoop - Robots.txt
+# https://meetloop-jet.vercel.app
+
+User-agent: *
+Allow: /
+Disallow: /app/
+Disallow: /reset-password/
+
+# Sitemap location
+Sitemap: https://meetloop-jet.vercel.app/sitemap.xml

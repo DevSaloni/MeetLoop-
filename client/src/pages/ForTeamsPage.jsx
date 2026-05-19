@@ -2,6 +2,7 @@ import React from 'react';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import { Link } from 'react-router-dom';
+import SEOHead from '../components/SEOHead';
 
 const ForTeamsPage = () => {
   const teamSegments = [
@@ -42,6 +43,12 @@ const ForTeamsPage = () => {
 
   return (
     <div className="min-h-screen bg-[#09090B] text-[#E5E1E4]">
+      <SEOHead
+        title="For Teams — Scale Accountability for Engineering, Product & Leadership"
+        description="MeetLoop works for every team: engineering, product & design, and leadership. Turn technical discussions, feedback sessions, and strategic meetings into trackable action items."
+        path="/for-teams"
+        keywords="team meeting tool, engineering team meetings, product team accountability, leadership meeting software, team collaboration AI"
+      />
       <Navbar />
 
       {/* Hero Section */}

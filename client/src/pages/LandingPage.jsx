@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Navbar from '../components/layout/Navbar'
 import Footer from '../components/layout/Footer'
+import SEOHead from '../components/SEOHead'
 
 const features = [
   { icon: 'psychology', title: 'AI Task Extraction', desc: 'Paste transcripts and let Gemini automatically identify decisions, tasks, and owners.' },
@@ -43,6 +44,12 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-black">
+      <SEOHead
+        title="MeetLoop | AI-Powered Meeting Accountability Platform"
+        description="Transform meetings into measurable results. MeetLoop uses AI to extract tasks from transcripts, track team commitments, and drive accountability automatically. Start free today."
+        path="/"
+        keywords="AI meeting tool, meeting accountability software, AI task extraction, meeting action items tracker, team accountability platform, automated meeting notes, meeting commitment tracker"
+      />
       <Navbar />
 
       {/* Hero Section */}
