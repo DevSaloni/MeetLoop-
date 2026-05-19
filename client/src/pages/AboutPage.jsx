@@ -149,7 +149,7 @@ const AboutPage = () => {
                 to="/signup"
                 className="bg-white text-orange-600 px-8 py-3.5 rounded-xl font-bold uppercase tracking-widest text-xs hover:scale-105 transition-transform active:scale-95 shadow-xl flex items-center justify-center gap-2 mx-auto w-fit"
               >
-                <span className="material-symbols-outlined text-lg">rocket_launch</span> Get Started for Free
+                <span className="material-symbols-outlined text-lg">rocket_launch</span> Get Started
               </Link>
             )}
           </div>

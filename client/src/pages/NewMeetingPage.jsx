@@ -15,8 +15,14 @@ const MEETING_TYPES = [
   "Sprint Retrospective",
   "Strategy & Planning",
   "Technical Architecture",
-  "Client Meeting",
+  "Client Sync",
   "1-on-1 Sync",
+  "Board Meeting",
+  "Brainstorming",
+  "Design Review",
+  "Project Kickoff",
+  "Incident Postmortem",
+  "All Hands / Townhall",
   "Other"
 ];
 

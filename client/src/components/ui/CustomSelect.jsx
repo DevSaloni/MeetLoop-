@@ -12,7 +12,7 @@ const CustomSelect = ({ options, value, onChange, placeholder = "Select an optio
     if (!isOpen && triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom;
-      const menuHeight = 220; // max-h approx
+      const menuHeight = 300; // max-h approx
       const openUpward = spaceBelow < menuHeight && rect.top > menuHeight;
 
       setMenuStyle({
@@ -38,7 +38,12 @@ const CustomSelect = ({ options, value, onChange, placeholder = "Select an optio
         setIsOpen(false);
       }
     };
-    const handleScroll = () => setIsOpen(false);
+    const handleScroll = (e) => {
+      if (menuRef.current && menuRef.current.contains(e.target)) {
+        return;
+      }
+      setIsOpen(false);
+    };
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('scroll', handleScroll, true);
     return () => {
@@ -69,7 +74,7 @@ const CustomSelect = ({ options, value, onChange, placeholder = "Select an optio
       style={menuStyle}
       className="bg-[#111113] border border-white/10 rounded-xl shadow-[0_16px_48px_rgba(0,0,0,0.7)] py-2 animate-fade-in origin-top backdrop-blur-xl"
     >
-      <div className="max-h-52 overflow-y-auto scrollbar-hide px-2">
+      <div className="max-h-72 overflow-y-auto px-2 custom-scrollbar">
         {options.map((option, idx) => {
           const label = typeof option === 'object' ? option.label : option;
           const val = typeof option === 'object' ? option.value : option;
@@ -78,11 +83,10 @@ const CustomSelect = ({ options, value, onChange, placeholder = "Select an optio
             <div
               key={idx}
               onMouseDown={(e) => { e.preventDefault(); handleSelect(option); }}
-              className={`flex items-center justify-between px-3 py-2.5 my-0.5 rounded-lg text-xs font-semibold cursor-pointer transition-all duration-150 ${
-                isSelected
-                  ? 'bg-primary-container text-white shadow-lg shadow-primary-container/20'
-                  : 'text-on-surface-variant hover:bg-white/5 hover:text-white'
-              } ${itemClassName}`}
+              className={`flex items-center justify-between px-3 py-2.5 my-0.5 rounded-lg text-xs font-semibold cursor-pointer transition-all duration-150 ${isSelected
+                ? 'bg-primary-container text-white shadow-lg shadow-primary-container/20'
+                : 'text-on-surface-variant hover:bg-white/5 hover:text-white'
+                } ${itemClassName}`}
             >
               <span>{label}</span>
               {isSelected && <span className="material-symbols-outlined text-sm">check</span>}
@@ -98,11 +102,10 @@ const CustomSelect = ({ options, value, onChange, placeholder = "Select an optio
     <div className={`relative ${className}`} ref={triggerRef}>
       <div
         onClick={openMenu}
-        className={`w-full min-h-[40px] py-2 bg-[#09090B] border ${
-          isOpen
-            ? 'border-primary-container ring-1 ring-primary-container/20 shadow-[0_0_20px_rgba(249,115,22,0.15)]'
-            : 'border-white/10 hover:border-white/20'
-        } rounded-lg px-3 flex items-center justify-between cursor-pointer transition-all duration-200`}
+        className={`w-full min-h-[40px] py-2 bg-[#09090B] border ${isOpen
+          ? 'border-primary-container ring-1 ring-primary-container/20 shadow-[0_0_20px_rgba(249,115,22,0.15)]'
+          : 'border-white/10 hover:border-white/20'
+          } rounded-lg px-3 flex items-center justify-between cursor-pointer transition-all duration-200`}
       >
         <span className={`text-xs font-semibold truncate ${value !== null && value !== undefined && value !== '' ? 'text-white' : 'text-on-surface-variant/40'}`}>
           {getSelectedLabel()}

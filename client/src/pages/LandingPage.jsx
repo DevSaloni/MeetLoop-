@@ -107,7 +107,7 @@ export default function LandingPage() {
                 ) : (
                   <>
                     <Link to="/signup" className="btn-primary-premium text-white font-bold px-8 py-4 rounded-xl text-sm md:text-base flex items-center justify-center gap-3">
-                      <span className="material-symbols-outlined">rocket_launch</span> Start for Free
+                      <span className="material-symbols-outlined">rocket_launch</span> Get Started
                     </Link>
                     <Link to="/how-it-works" className="btn-secondary-premium text-white px-8 py-4 rounded-xl flex items-center justify-center gap-3 text-sm md:text-base">
                       <span className="material-symbols-outlined text-orange-500">play_circle</span> How it Works
@@ -256,7 +256,7 @@ export default function LandingPage() {
               ) : (
                 <>
                   <Link to="/signup" className="bg-white text-orange-600 px-10 py-4 rounded-xl font-bold uppercase tracking-widest text-sm hover:translate-y-[-2px] transition-all shadow-xl flex items-center justify-center gap-2">
-                    <span className="material-symbols-outlined">rocket_launch</span> Get Started Free
+                    <span className="material-symbols-outlined">add_box</span> Create Workspace
                   </Link>
                   <Link to="/how-it-works" className="bg-black/20 backdrop-blur-md border border-white/30 text-white px-10 py-4 rounded-xl font-bold uppercase tracking-widest text-sm hover:bg-black/30 transition-all flex items-center justify-center gap-2">
                     <span className="material-symbols-outlined">play_circle</span> How it Works
